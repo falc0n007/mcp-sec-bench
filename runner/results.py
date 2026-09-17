@@ -277,6 +277,18 @@ def _check_stat_invariants(doc: dict[str, Any]) -> list[str]:
     """
     problems: list[str] = []
     for i, scanner in enumerate(doc.get("scanners") or []):
+        # A zero-run row is how an unavailable scanner is published. Without a
+        # reason it is just an empty score, which reads as "this tool found
+        # nothing" rather than "we could not run it" -- the exact conflation
+        # governance.md refuses.
+        if scanner.get("runs") == 0 and not scanner.get("unavailable_reason"):
+            problems.append(
+                f"/scanners/{i}: runs is 0 but no unavailable_reason is set; a "
+                f"scanner that could not be run must publish why")
+        if scanner.get("runs", 0) > 0 and scanner.get("unavailable_reason"):
+            problems.append(
+                f"/scanners/{i}: has both completed runs and an "
+                f"unavailable_reason; one of them is wrong")
         metrics = scanner.get("metrics") or {}
         blocks: list[tuple[str, Any]] = [
             (f"/scanners/{i}/metrics/recall_overall", metrics.get("recall_overall")),

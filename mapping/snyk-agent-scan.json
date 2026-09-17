@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0",
+  "scanner_id": "snyk-agent-scan",
+  "display_name": "Snyk agent-scan (fka Invariant Labs mcp-scan)",
+  "scanner_versions": ["0.6.3"],
+  "adapter_version": "1.0.0",
+  "label_provenance": "unverified",
+  "provenance_note": "This project has never seen snyk-agent-scan 0.6.3's real --json output. docs/governance.md's Which-scanners-are-included criteria let this scanner in as `requires signup`, but SNYK_TOKEN gates ALL analysis (verified by recon in docs/scanner-survey.md: a tokenless run enumerates tools and then exits 1 with no findings), and this project has not created a Snyk account or obtained a token. Every raw_label below is copied, in the vendor's own wording, from docs/scanner-survey.md's account of agent-scan's public README/docs description of its ~15 scored 'risk indicators' in 0.6+ (`prompt injection`, `dangerous words`, `untrusted content`, `private data`, `destructive capabilities`, `suspicious downloads`, `malicious code`, `secret detection`) -- vendor documentation, not vendor output. This file must be re-derived from a real committed capture before any Snyk number is published; see the 'For a future maintainer' block at the bottom of runner/adapters/snyk_agent_scan.py for the exact steps.",
+  "label_source_field": "findings[].risk_indicator (BEST GUESS, unverified -- runner/adapters/snyk_agent_scan.py's parser also tries `indicator`, `category`, `type`, `issue_type`, `rule_id`, `code`, `id`, `name` and several container-array keys, and preserves an unrecognised shape rather than dropping it, because the real field name and container key used by 0.6.3's --json output have not been observed)",
+  "frozen_for_corpus_version": null,
+  "matching": {
+    "case_insensitive": false,
+    "strip_surrounding_whitespace": false,
+    "note": "Byte-exact, the schema default. We have no evidence either way about whether agent-scan's real output varies in case or padding -- there is nothing here yet that would justify loosening the match, and loosening it pre-emptively on an unverified table would just be a second guess stacked on the first. Revisit once real output exists."
+  },
+  "notes": [
+    "PROVISIONAL SKELETON, not a scoring table. label_provenance is 'unverified' throughout this file: no entry here was copied from output this project ran, because SNYK_TOKEN gates all analysis and no token was obtained (docs/scanner-survey.md, runner/adapters/snyk_agent_scan.py). Every entry must be re-derived against real --json output, with the labels' actual spelling, casing and field placement confirmed, before any Snyk recall/precision number is published on the scoreboard. Per the task brief this table is intentionally left thin: an honest, mostly-unmapped skeleton beats inventing plausible-looking vendor labels to fill it out.",
+    "Covers only the 8 named 'risk indicator' terms docs/scanner-survey.md was able to recover from agent-scan's own public documentation for its 0.6+ scoring model. It does NOT cover the older 0.5.x E-/W- issue-code vocabulary (Prompt Injection, Tool Poisoning, Tool Shadowing, Malware Payloads, Credential Handling, Hardcoded Secrets) that the survey also mentions, because this adapter and Dockerfile pin 0.6.3 and that older vocabulary is not what 0.6.3 emits. It also does not cover whatever vocabulary agent-scan's separate 'tool hashing' and 'tool shadowing' checks use (mentioned in the task brief and in scanner-survey.md as capabilities distinct from the 8 named risk indicators): no quoted label string for those checks' output exists in our sources, and inventing one would be exactly the fabrication this file must avoid.",
+    "Every entry's dispute_risk is 'high' and status is 'provisional', without exception, for the same reason: a mapping decided from a vendor's one-line indicator name, with no example finding to check it against, is a guess about what the indicator actually fires on. Two of the eight (secret detection, prompt injection) are mapped because their name is a close enough paraphrase of one of our present-when tests that declining to say so would be coy rather than cautious; the other six are left unmapped as 'insufficient-specificity' because a one- or two-word name is genuinely not enough evidence to place them, and pretending otherwise would manufacture confidence this project does not have.",
+    "R5 (docs/mapping-rationale.md) forbids keying a mapping decision on the corpus, so it is not why these six are unmapped and it is not a defence available in this file. They are unmapped because the evidence -- a vendor's short indicator name with no field-level example -- does not clear R1's bar, which is a fact about this file's provenance, not about the corpus.",
+    "Read docs/mapping-rationale.md for the R1-R6 decision procedure the rationale text cites."
+  ],
+  "entries": [
+    {
+      "raw_label": "secret detection",
+      "label_note": "UNVERIFIED. Vendor's own name (as recovered in docs/scanner-survey.md from agent-scan's public documentation of its 0.6+ risk-indicator set) for one of ~15 scored indicators. No description of its exact trigger condition, output field name, or casing has been observed; the name itself is all this entry has to go on.",
+      "applies_to_stage": "runtime",
+      "decision": "map",
+      "mapped_class": "A7",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest marks a literal as a planted secret and the value is syntactically a credential of a recognisable type - not a placeholder, not a variable reference, not a documented example value",
+        "why_satisfied": "The indicator's own name states its purpose as detecting a secret in what agent-scan inspects (server manifests/descriptions per the tool's documented input). That purpose -- a credential-shaped value present in inspected material -- is the same property A7's present-when test names. This is inferred entirely from the indicator's name; we have not observed what value shapes actually trigger it, whether it applies an entropy or format filter, or whether it would also fire on a mere secret-sounding key name (which A7 excludes, per taxonomy.md's own 'not a placeholder / not a variable reference' clause -- see the parallel case argued in mapping/mcp-guard.json's MR-mcp-guard-016 for exactly this failure mode in a different tool)."
+      },
+      "considered_classes": [
+        {
+          "class": "A9",
+          "why_rejected": "A9 is the channel that leaks the environment, A7 is the secret sitting in inspected material. Nothing in the indicator's name suggests it is about a tool returning process environment contents to a caller; 'secret detection' reads as being about a value's shape, which is A7's territory under taxonomy.md's own A7/A9 split."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-snyk-agent-scan-001",
+      "rationale": "The clearest of the eight, and still only a name-level match. 'secret detection' and A7's 'credential-shaped literal' name the same underlying concern closely enough that leaving it unmapped would be excessive caution dressed up as rigor -- but mapping it is not the same as trusting it. We have zero examples of what value this indicator actually flags, so we cannot say today whether it applies A7's own exclusions (placeholders, variable references, documented example values) or fires on anything that merely looks secret-shaped by name, the way mapping/mcp-guard.json's MCPG-DOCKER-ENV-SECRET does and is left unmapped for exactly that reason (MR-mcp-guard-016). This entry stays mapped rather than following that precedent because 'secret detection' is presented as scoring a VALUE, not a key name -- but that reading could be wrong, which is why dispute_risk is high and status is provisional rather than accepted. If real output shows this indicator fires on key names alone, this entry should be withdrawn in favour of unmapped/insufficient-specificity, following MR-mcp-guard-016's reasoning exactly.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "prompt injection",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators. docs/scanner-survey.md and the task brief both describe agent-scan as analysing 'server manifests/descriptions' for this category, which points at tool metadata rather than tool call return values, but no real finding has been observed to confirm which content this indicator actually inspects.",
+      "applies_to_stage": "runtime",
+      "decision": "map",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently",
+        "why_satisfied": "agent-scan's documented capability is analysing server manifests/descriptions -- i.e. the tool descriptor fields A1's test is about -- for exactly the category the indicator is named for. Read at face value, an indicator named 'prompt injection' that inspects tool descriptions is testing for instruction-bearing metadata, which is A1's definition verbatim. This is a face-value reading of a one-line vendor label with no example to check it against."
+      },
+      "considered_classes": [
+        {
+          "class": "A4",
+          "why_rejected": "A4 is the identical instruction-bearing-content test applied to a tool's RETURN value instead of its metadata. Nothing in the sources this entry is based on says whether agent-scan's live connection also inspects return-value content from actual tool calls (as opposed to only the descriptors it reads while enumerating tools) -- the task brief's own description ('analyses server manifests/descriptions') reads as metadata-only, which is why A1 and not A4 was chosen, but we cannot rule out A4 from a name alone."
+        },
+        {
+          "class": "A3",
+          "why_rejected": "A3 requires a reference to another server's tool. Nothing about a one-word indicator name asserts cross-server awareness, and mapping-rationale.md section 11 item 2 flags this exact ambiguity as the highest-risk boundary in the taxonomy for any tool shipping one generic 'prompt injection' concept -- which is precisely this case. Mapped to A1 as the more conservative, more literally-supported reading rather than to A3."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-snyk-agent-scan-002",
+      "rationale": "Mapped, but weaker than the secret-detection entry above, and marked so. A1 is chosen over A4 because agent-scan's documented input surface (tool manifests/descriptions, reached via a live connection) reads as metadata rather than tool-call return values -- but that is an inference from a capability description, not an observation of a labelled finding, and mapping-rationale.md section 11 names this A1/A4 split as the single highest-risk boundary in the whole taxonomy for exactly this shape of vendor vocabulary. If real output shows this indicator also (or only) fires on tool-call return content, this entry needs either an applies_to_stage split (if the runner can tell the two apart) or a straight re-map to A4, per R3/R4 -- not a silent broadening of what 'metadata' is read to cover.",
+      "confidence": "low",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "dangerous words",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators; no further description recovered.",
+      "applies_to_stage": "runtime",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "rationale_id": "MR-snyk-agent-scan-003",
+      "rationale": "A two-word label with no documented trigger condition. 'Dangerous words' could plausibly be a keyword denylist over almost any content this tool inspects -- imperative-sounding phrases (which would edge toward A1), profanity or violent language (which no class covers), or something else entirely. Nothing in the name clears R1's bar of citing a present-when test and showing it is satisfied; guessing which of several plausible readings is correct, with no example to check against, is exactly the 'closest in spirit' mapping R1 forbids. Left unmapped, at no cost to the scanner.",
+      "confidence": "low",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "untrusted content",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators; no further description recovered.",
+      "applies_to_stage": "runtime",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A4",
+          "why_rejected": "A4 requires the untrusted content to carry instruction-bearing text that would independently qualify under the A1 test. 'Untrusted content' as a label names a provenance property (the data did not come from a trusted source), not a content property (the data instructs the agent) -- those are different tests, and a label naming the former does not establish the latter without an example to check."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-snyk-agent-scan-004",
+      "rationale": "Provenance and instruction-bearing-content are different properties, and this label names the first while every one of our classes tests for something closer to the second. Mapping it to A4 on the strength of the word 'content' would be R1's 'closest in spirit' failure mode by name. Left unmapped.",
+      "confidence": "low",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "private data",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators; no further description recovered.",
+      "applies_to_stage": "runtime",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A9",
+          "why_rejected": "A9's test is specifically about a tool returning PROCESS ENVIRONMENT contents, selected by caller input or wholesale. 'Private data' as a label reads as broader than that -- plausibly PII in a return value, or a data-classification concept general to app-sec -- and nothing in the name narrows it to the environment block specifically."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-snyk-agent-scan-005",
+      "rationale": "Too general a name to anchor to any one present-when test. Generic PII/sensitive-data detection is also the kind of finding docs/taxonomy.md's scope boundary excludes as 'not MCP-specific' when it has no MCP surface of its own, which this name gives no reason to rule out. Left unmapped.",
+      "confidence": "low",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "destructive capabilities",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators; no further description recovered.",
+      "applies_to_stage": "runtime",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10's test requires caller-controlled input to reach process execution. 'Destructive capabilities' as a label plausibly names any tool whose declared FUNCTION is destructive (delete, overwrite, drop) regardless of whether a caller can escape an allowlist or reach an unrestricted exec sink -- a tool can be destructive by design and still satisfy no A10 test at all, per A10's own 'not this class: a server that executes a fixed command with no caller-controlled component ... belongs in the benign controls' clause."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-snyk-agent-scan-006",
+      "rationale": "The tempting mis-map in this table, so it is recorded with its considered class rather than dismissed in one line. A10 is about a caller escaping into execution, not about a tool's declared capability being dangerous by design; a capability inventory of 'this tool can delete things' is not evidence of either an unrestricted sink or a bypassable allowlist. Left unmapped.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "suspicious downloads",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators; no further description recovered.",
+      "applies_to_stage": "runtime",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "not-mcp-specific",
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10 needs a caller-reachable execution sink. A label about downloads names a network-fetch behaviour, not an execution one; a tool can fetch a file with no caller-controlled component at all, and nothing in the name asserts the fetched content is then executed the way A10 requires."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-snyk-agent-scan-007",
+      "rationale": "Reads as a general supply-chain / malware-delivery signal (an unexpected outbound fetch, a known-bad URL), which is the kind of generic finding docs/taxonomy.md's scope boundary excludes when it has no MCP-specific surface, and no class here tests for a download in isolation from an execution or exfiltration step it has not been shown to connect to. Left unmapped.",
+      "confidence": "medium",
+      "dispute_risk": "medium",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    },
+
+    {
+      "raw_label": "malicious code",
+      "label_note": "UNVERIFIED. Vendor's own name for one of the ~15 risk indicators; no further description recovered.",
+      "applies_to_stage": "runtime",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "rationale_id": "MR-snyk-agent-scan-008",
+      "rationale": "The vaguest of the eight: a general malware/code-signature concept with no stated mechanism (static signature match on source? behavioural observation at runtime? which of our ten sinks, if any, is implicated?). None of that is recoverable from the two-word name, and R1 requires citing a present-when test and showing it is satisfied, not guessing which of several unrelated classes (A8, A9, A10 all involve code paths this label could in principle be pointing at) is meant. Left unmapped.",
+      "confidence": "low",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to Snyk or Invariant Labs)"
+    }
+  ]
+}

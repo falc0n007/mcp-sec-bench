@@ -46,7 +46,11 @@
             "description": "Attack CLASSES excluded from this scanner's denominator because it does not attempt the stage they are reachable from. Class identifiers (\"A4\"), not (server, class) item identifiers -- elsewhere in this project \"item\" means a (server, class) pair, so this field is named for what it holds. Derivable from stages_attempted and the taxonomy's surface table. These are NOT false negatives.",
             "items": { "enum": ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"] }
           },
-          "runs": { "type": "integer", "minimum": 1 },
+          "runs": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Runs completed. Zero is legitimate and means the scanner could not be run at all; governance.md requires such a scanner to be published with its unavailable_reason rather than omitted, so the schema must be able to represent it. validate_results checks that runs: 0 is always accompanied by an unavailable_reason, since a zero-run row with no reason would publish an empty score with no explanation."
+          },
           "metrics": {
             "type": "object",
             "required": ["recall_per_class", "recall_overall", "precision_overall"],

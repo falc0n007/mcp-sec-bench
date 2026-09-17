@@ -1,0 +1,34 @@
+{
+  "_synthetic_fixture_warning": "SYNTHETIC AND UNVERIFIED -- hand-written for tests/test_adapter_snyk.py. This is NOT a capture of real snyk-agent-scan output. SNYK_TOKEN gates all analysis (docs/scanner-survey.md) and this project has never obtained a token, so agent-scan 0.6.3's real --json shape has never been observed. Field names and structure here are a best-effort guess consistent with the vendor's public documentation of its ~15 'risk indicator' names, plus one entry deliberately shaped NOTHING like that guess, to exercise the adapter's defensive parsing path. Do not treat any field name in this file as confirmed vendor vocabulary, and do not use it to score anything -- see mapping/snyk-agent-scan.json's label_provenance.",
+  "scan_metadata": {
+    "cli_version": "0.6.3"
+  },
+  "findings": [
+    {
+      "risk_indicator": "secret detection",
+      "severity": "high",
+      "target": {
+        "server": "a07-hardcoded-secrets",
+        "tool": "get_config"
+      },
+      "message": "possible hardcoded credential detected in tool description"
+    },
+    {
+      "risk_indicator": "prompt injection",
+      "severity": "medium",
+      "target": {
+        "server": "a01-tool-description-injection",
+        "tool": "summarize_document"
+      },
+      "message": "instruction-like text detected in tool description"
+    },
+    {
+      "totally_unrecognised_shape": true,
+      "note": "This entry intentionally carries none of the label field names runner/adapters/snyk_agent_scan.py looks for (risk_indicator, indicator, category, type, issue_type, rule_id, code, id, name). It exists to prove the parser does not drop a finding whose shape it did not anticipate.",
+      "nested_payload": {
+        "some_future_field": "agent-scan may restructure its JSON in a later release",
+        "value": 42
+      }
+    }
+  ]
+}

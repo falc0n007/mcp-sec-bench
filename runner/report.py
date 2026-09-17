@@ -339,7 +339,7 @@ def render_text(
                     NO_DATA,
                     NO_DATA,
                     NO_DATA,
-                    f"unavailable: {reason}",
+                    _truncate_note(f"unavailable: {reason}"),
                 ]
             )
             continue

@@ -81,7 +81,10 @@ def _scanner_gamma_unavailable() -> ScannerReport:
         corpus_version="corpus-abc123",
         requires_signup=True,
         stages_attempted=[],
-        runs=1,
+        # Zero, not one: a scanner that could not be run has no runs. The schema
+        # previously required runs >= 1, which forced this sample to claim a
+        # run that never happened.
+        runs=0,
         recall_per_class_mean={},
         recall_per_class_range={},
         recall_overall_mean=None,
