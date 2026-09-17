@@ -177,15 +177,52 @@ The disclosure window is elapsed time that cannot be compressed, so going full-t
 
 Candidates for v1. Verify every field before relying on it — this is a starting list, not confirmed research.
 
-| Scanner | Vendor | License | Account needed to run | Approach | Adapter status |
+**Verified 2026-09-17.** Every row below was installed and executed against the
+corpus; the survey with sources and captured output is in
+[scanner-survey.md](scanner-survey.md). The original table was assembled from
+memory and three of its rows were wrong, which is why it carried the
+verify-before-relying warning.
+
+| Scanner | Vendor | License | Account needed to run | Takes | Adapter status |
 | --- | --- | --- | --- | --- | --- |
-| mcp-scanner | Cisco | Apache 2.0 | No for core (YARA/static); yes for LLM-judge and threat-intel extras | Multi-engine: YARA, LLM-as-judge, behavioral | Not started |
-| agent-scan (fka Invariant mcp-scan) | Snyk | Source-available | Yes — SNYK\_TOKEN required | Static manifest/description analysis, tool hashing, shadowing checks | Not started |
-| sentinel-scan-cli | Community | MIT | No | Zero-dependency static scan | Not started |
-| mcp-guard | Community | TBC | No | Capability-gap detection, source + live endpoint | Not started |
-| MCPKernel | Community | Apache 2.0 | No | Runtime proxy: policy, taint tracking, sandboxing | Candidate — runtime harness may differ |
+| mcp-scanner 4.8.4 | Cisco | Apache 2.0 | No for YARA and readiness; LLM key for the only source-code analyzer | Live URL, stdio command, client config, tools JSON | Planned (2nd) |
+| agent-scan 0.6.3 | Snyk | Apache 2.0 | Yes — `SNYK_TOKEN` gates **all** analysis | `mcpServers` config JSON; remote HTTP works | Blocked on a token |
+| sentinel-scan-cli 1.4.16 | Community | MIT | No | An `mcp.json` manifest only | Candidate (5th) |
+| mcp-guard 2.0.0 (`SaravanaGuhan/mcp-guard`) | Community | MIT | No, `--offline` works | **A source directory** — our native shape | Planned (1st) |
+| Ramparts 0.8.8 | Community | Apache 2.0 | No for YARA; LLM stage skips silently | A live MCP URL plus auth headers | Planned (3rd) |
+| ~~MCPKernel~~ | Community | Apache 2.0 | No | Runtime gateway | **Disqualified** — self-describes as a security gateway, which governance.md puts out of scope by category |
+
+Corrections to the original table:
+
+- **Snyk agent-scan is Apache 2.0**, not source-available, and its token gates
+  *all* analysis rather than only the extras.
+- **`mcp-guard` as originally described does not exist.** No tool advertises
+  "capability-gap detection"; that phrasing appears to have come from an arXiv
+  paper rather than a shipping product, and four unrelated projects share the
+  name. The row now names a specific repository.
+- **Ramparts was missing entirely** and is a better third adapter than anything
+  it displaces: independent vendor, Apache 2.0, live-endpoint native.
+- **MCPKernel is disqualified by our own criteria**, not by quality. Recording
+  the reason matters so its absence is not read as a verdict.
 
 Three working adapters is the floor for launch. If only three land, ship anyway.
+
+### First-pass observations, credential-free, not yet a result
+
+Captured while verifying installability. These are **not** benchmark results --
+no mapping layer, single runs, no disclosure round -- but they set expectations:
+
+| Scanner | Findings on 11 vulnerable servers | Findings on 4 controls |
+| --- | --- | --- |
+| Cisco (`--analyzers yara`) | 0 | 0 |
+| Ramparts (rules correctly wired) | 0 | 0 |
+| sentinel-scan-cli | 5 | 5 |
+| mcp-guard | 6 across a07, a08, a10a, a10b | 2 (c01, c03) |
+
+Cisco's YARA engine missed `a01` even though the injected tool description is
+verbatim in the text it scanned. If that survives the real runner and the
+disclosure round, it is the single most quotable finding the benchmark has --
+which is exactly why it goes through both before anyone quotes it.
 
 ## Task tracker
 

@@ -31,6 +31,8 @@ the people who made it. Append; do not rewrite.
 | 2026-09-17 | RawFinding carries an explicit `stage` | A2 is creditable from either stage, so a finding on a dual-surface class otherwise has its stage guessed. The field replaces a convention of stashing it in the untyped `raw` dict. |
 | 2026-09-17 | `c02-webhook-notifier` carries NO tolerated A5 entry | A label like "outbound network call in a tool" fires identically on c02 and on `a05-argument-exfiltration`; the servers differ in the tool's declared purpose, not in the shape of the code, and the taxonomy is explicit that a declared-destination sender is not A5. Telling them apart is exactly the capability under measurement, so tolerating A5 on c02 would excuse the failure the control exists to catch. It is a false positive. Decided before the corpus was tagged, because the tolerated set freezes at tag time and a later addition would require a governance amendment plus re-disclosure. |
 | 2026-09-17 | Mapping keys on the scanner's label, never on the target server | A mapping table that resolved a label differently depending on which server the finding landed on would be teaching the mapper the answer key, which is the overfitting the private held-back set exists to detect. Mappings are frozen against a corpus_version before a run. |
+| 2026-09-17 | Scanner table replaced with verified facts; Ramparts added, MCPKernel disqualified | Every candidate was installed and run before being relied on, per the plan's own warning. Three rows were wrong: Snyk's licence (Apache 2.0, not source-available) and the scope of its token gate (all analysis, not just extras); `mcp-guard` as described did not exist, its "capability-gap detection" phrasing apparently originating in an arXiv paper rather than a shipping tool; and Ramparts, a viable independent Apache 2.0 scanner, was missing entirely. MCPKernel exists as described but self-describes as a security gateway, which governance.md excludes by category -- recorded with its reason so the absence is not read as a verdict. |
+| 2026-09-17 | Adapter build order: mcp-guard, Cisco, Ramparts, then Snyk when a token exists | mcp-guard takes a source directory, which is the corpus's native shape, needs no credentials and runs offline, so it exercises the whole pipeline first. Cisco is the highest-profile tool and ships its own containers. Ramparts is live-endpoint native and covers the runtime stage from an independent vendor. Snyk is blocked on a free token and will carry both `requires signup` and a note that analysis is server-side. |
 
 ## Open questions
 
@@ -53,6 +55,11 @@ Carried forward. Resolved entries move into the table above with a date.
   on finding text, was rejected as unreviewable. The taxonomy expects this route
   to be rare, so the cost is small, but it is a known defect rather than an
   unknown one. Resolve before Phase 4.
+- **Should the scoreboard carry a maturity column?** Three candidate scanners
+  are single-author repositories with 0-12 stars sitting beside Cisco and Snyk.
+  Inclusion is by criteria rather than popularity and that will not change, but
+  a reader comparing a weekend project against a vendor security product
+  without that context is being misled by omission. Decide before Phase 4.
 - **Should the near-miss counter be narrowed?** As defined, any wrong class on
   a server that declares something counts, so the counter is trivially
   inflated: the `overflagger` fixture earns 99 near misses alongside 137 false
