@@ -285,8 +285,9 @@ runner would need a two-phase run (record baseline, trigger the mutation, rescan
 **Output [V].** `--format json` (default) or `sarif` (SARIF 2.1.0), written to `--output`.
 `--fail-on {high,medium,low,none}` controls exit code.
 
-**Label vocabulary [V]** — 10 heuristics, each tagged with an OWASP LLM *and* an OWASP MCP
-category:
+**Label vocabulary [V]** — this survey recorded 11 heuristics; building the adapter
+against the whole corpus found **15**. Each is tagged with an OWASP LLM *and* an OWASP
+MCP category:
 
 ```
 tool_description_injection    LLM01 / MCP01
@@ -300,7 +301,18 @@ hardcoded_credential          LLM02 / MCP03
 unpinned_remote_source        LLM03 / MCP04
 missing_provenance            LLM03 / MCP04
 tool_definition_drift         (with --baseline)
+command_injection_risk        found only by running it
+cross_origin_exfiltration     found only by running it
+dos_resource_exhaustion       found only by running it
+homoglyph_typosquat           found only by running it
 ```
+
+The last four were missed by this survey and found only when the adapter ran
+the tool across all 15 corpus servers. Recorded rather than quietly corrected,
+because it is the kind of survey error that silently understates a scanner: an
+unmapped label costs a tool nothing, but a label we never knew existed cannot
+be mapped at all, and its detections would have arrived mid-run as unrecognised
+output. All 15 are now in `mapping/sentinel-scan-cli.json`.
 
 Real finding, captured from `a10b-allowlist-bypass`:
 

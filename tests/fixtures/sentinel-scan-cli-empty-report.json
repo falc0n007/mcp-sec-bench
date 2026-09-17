@@ -1,0 +1,18 @@
+{
+  "summary": {
+    "tool": "sentinel-scan-cli mcp",
+    "version": "1.4.16",
+    "num_tools_scanned": 3,
+    "num_servers_scanned": 0,
+    "num_findings": 0,
+    "findings_by_severity": {},
+    "findings_by_heuristic": {},
+    "manifest": "/work/c04.json"
+  },
+  "results": [],
+  "tool_hashes": {
+    "health": "c056b95a7574d46d2d27595f6b8620e70473ee630c2df50427aa602850b23dfd",
+    "version": "157c3043cbbfcdb78f3bfd6a1335d7a4f21614448b8c878db79a07db2467780f",
+    "uptime": "dc074bd37c73eec9254e6e27f24fd7cc77a3095ecb1f7a608775bfc0a01e9fef"
+  }
+}

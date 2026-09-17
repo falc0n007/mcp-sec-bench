@@ -248,8 +248,8 @@ which is exactly why it goes through both before anyone quotes it.
 
 - [x] Runner skeleton and results JSON schema
 - [x] Adapter: Cisco mcp-scanner
-- [ ] Adapter: Snyk agent-scan (with token path) — blocked: needs a free SNYK_TOKEN
-- [ ] Adapter: sentinel-scan-cli
+- [x] Adapter: Snyk agent-scan (token path implemented; publishes as unavailable until a SNYK_TOKEN exists)
+- [x] Adapter: sentinel-scan-cli
 - [x] Adapter: mcp-guard
 - [x] Adapter: Ramparts (added after the scanner survey)
 - [x] Taxonomy mapping layer + per-mapping rationale doc
@@ -257,9 +257,7 @@ which is exactly why it goes through both before anyone quotes it.
 - [x] N=5 repeat runs with mean/spread reporting
 - [x] Live-endpoint stage for runtime-only classes
 - [x] Scoreboard renderer (table + JSON)
-- [ ] Verify the one-command run works from a genuinely clean checkout
-      (venv creation, dependency install, and scanner image builds are all
-      currently manual)
+- [x] Verify the one-command run works from a genuinely clean checkout (`make`)
 
 **Phase 3 — Disclosure**
 

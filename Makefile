@@ -38,6 +38,10 @@ images:
 		-t mcp-sec-bench/ramparts:0.8.8 .
 	docker build -f $(DOCKERFILES)/cisco-mcp-scanner.Dockerfile \
 		-t mcp-sec-bench/cisco-mcp-scanner:4.8.4 .
+	docker build -f $(DOCKERFILES)/sentinel-scan-cli.Dockerfile \
+		-t mcp-sec-bench/sentinel-scan-cli:1.4.16 .
+	docker build -f $(DOCKERFILES)/snyk-agent-scan.Dockerfile \
+		-t mcp-sec-bench/snyk-agent-scan:0.6.3 .
 	@echo "scanner images built"
 
 lab-up:

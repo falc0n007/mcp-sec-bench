@@ -1,0 +1,468 @@
+{
+  "summary": {
+    "tool": "sentinel-scan-cli mcp",
+    "version": "1.4.16",
+    "num_tools_scanned": 42,
+    "num_servers_scanned": 15,
+    "num_findings": 40,
+    "findings_by_severity": {
+      "HIGH": 21,
+      "MEDIUM": 4,
+      "LOW": 15
+    },
+    "findings_by_heuristic": {
+      "missing_hitl_confirmation": 8,
+      "excessive_agency_schema": 1,
+      "indirect_injection_surface": 1,
+      "unpinned_remote_source": 15,
+      "missing_provenance": 15
+    },
+    "manifest": "/work/mcp.json"
+  },
+  "results": [
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "delete_sku",
+      "evidence": "tool exposes a sensitive \"filesystem_write\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "disk_free",
+      "evidence": "tool exposes a sensitive \"exec\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "excessive_agency_schema",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "run_build",
+      "evidence": "parameter \"command\" is a free-form string with no enum/pattern - looks like arbitrary command/code execution",
+      "recommendation": "Constrain this parameter to a fixed enum of allowed operations, or remove raw command/code execution from the tool surface entirely."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "run_build",
+      "evidence": "tool exposes a sensitive \"exec\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "run_smoke_check",
+      "evidence": "tool exposes a sensitive \"exec\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "indirect_injection_surface",
+      "owasp_category": "LLM01: Prompt Injection",
+      "owasp_mcp_category": "MCP01: Prompt Injection via Tool Descriptions",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "send_notification",
+      "evidence": "single tool both ingests untrusted external content and can take an action - untrusted content it reads could contain instructions that drive the action it performs",
+      "recommendation": "Split ingestion and action into separate tools, and treat fetched content as untrusted data the model should never treat as instructions."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a01-tool-description-injection",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8101/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a02-rug-pull",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8102/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a03-tool-shadowing",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8103/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a04-response-injection",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8104/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a05-argument-exfiltration",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8105/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a06-authless-endpoint",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8106/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a07-hardcoded-secrets",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8107/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a08-unrestricted-file-read",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8108/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a09-unrestricted-env-access",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8109/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a10a-command-execution",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8110/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "a10b-allowlist-bypass",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8111/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "c01-notes-workspace",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8201/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "c02-webhook-notifier",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8202/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "c03-release-runner",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8203/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "unpinned_remote_source",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "HIGH",
+      "confidence": 0.75,
+      "tool": "c04-status-service",
+      "evidence": "server is reachable over a plaintext remote transport: \"http://127.0.0.1:8204/mcp\"",
+      "recommendation": "Serve MCP over https:// (or a local stdio transport). A plaintext remote endpoint can be tampered with or impersonated in transit."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "MEDIUM",
+      "confidence": 0.75,
+      "tool": "route_alert",
+      "evidence": "tool exposes a sensitive \"network_send\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "MEDIUM",
+      "confidence": 0.75,
+      "tool": "send_notification",
+      "evidence": "tool exposes a sensitive \"network_send\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "MEDIUM",
+      "confidence": 0.75,
+      "tool": "preview_notification",
+      "evidence": "tool exposes a sensitive \"network_send\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "missing_hitl_confirmation",
+      "owasp_category": "LLM06: Excessive Agency",
+      "owasp_mcp_category": "MCP06: Excessive Agency / Permissions",
+      "severity": "MEDIUM",
+      "confidence": 0.75,
+      "tool": "setup_example",
+      "evidence": "tool exposes a sensitive \"network_send\" capability but declares no human-in-the-loop/confirmation metadata (e.g. requiresConfirmation, requireApproval, humanInTheLoop)",
+      "recommendation": "Add explicit confirmation metadata the host is expected to enforce (e.g. requiresConfirmation: true) so a human approves this call before a command execution, filesystem write/delete, or outbound send/network action runs autonomously."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a01-tool-description-injection",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a02-rug-pull",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a03-tool-shadowing",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a04-response-injection",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a05-argument-exfiltration",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a06-authless-endpoint",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a07-hardcoded-secrets",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a08-unrestricted-file-read",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a09-unrestricted-env-access",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a10a-command-execution",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "a10b-allowlist-bypass",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "c01-notes-workspace",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "c02-webhook-notifier",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "c03-release-runner",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    },
+    {
+      "heuristic": "missing_provenance",
+      "owasp_category": "LLM03: Supply Chain Vulnerabilities",
+      "owasp_mcp_category": "MCP04: Supply Chain Risk",
+      "severity": "LOW",
+      "confidence": 0.75,
+      "tool": "c04-status-service",
+      "evidence": "server config launches a remote-sourced package or endpoint but declares no provenance metadata (no signature/checksum/publisher field)",
+      "recommendation": "Record and verify a publisher identity, signature, or checksum for remote-sourced MCP servers so a swapped or compromised package/build can be detected before use."
+    }
+  ],
+  "tool_hashes": {
+    "store_document": "3ffd1b5c99a0628f9519cb4d5782a2bd2b1f92f65dbb2467d5bf2b62f9f69fdb",
+    "list_documents": "9fa80f7bfd2f0085fd95bd59239e455d67d54746822c1de9c4d8cda982598c59",
+    "summarize_document": "4a81dff62e588d27e6d0e05be838c60cd292d73afbaf35b5abb0228545dced9e",
+    "extract_keywords": "399651d2b053c90d4d5c1020abd7e7f920d50073783723c5fbf5d0d271fb3cb2",
+    "get_changelog": "b261a8b39a8dba44cdb1996d888234a0e17a1ff7f4fa765663dfa953dad4cd3b",
+    "summarize_changelog": "8de7efc0ac330315895ca8d62ff1505bda3454c5d905610bb7203f67b4ecc3a0",
+    "route_alert": "d7b98e7ac151cf6cc2d1300196334f532ea8d7362a36c231b4343ccb660028c6",
+    "list_channels": "788505a6ef11611d8b29afcc2c542ad047d7d05bb236cc9c5daba1262d50be17",
+    "recent_alerts": "4437d81242028adf2ef838ccfc1a53676371a1423d017d47b7c3e755d525696d",
+    "acknowledge_alert": "aa23fab68d4b4e8215dad76c268336ded486d8c280d8b04691541572887c7376",
+    "list_feeds": "3e1973b939faabd808bc026b6e13e78c126685b64e4024d35e3dfcec303a9567",
+    "read_digest": "8b81c9ed643caffca5e414a4523be502d0038695f269167325fcbdc43737f3a3",
+    "get_item": "3a766e785801bc54ebf9f87a664c491b91b74d27e930da0ec9b330b01e5867e3",
+    "spellcheck": "18dc4099030f5d567e7cb3ddfb5f332727b7a06511716dc46c500b09a94af169",
+    "detect_language": "e2e46e6d2f0f11839f76433be672c37e0e85c9b977d8abf833cf12f5f3251c0a",
+    "list_inventory": "41f10d9bd0c2503bc5630f161ecad556faec6282c78ac32c7be0f8a4c4785800",
+    "export_inventory": "a71baff826ad8b732532239237c06462c673e1c1f3e69254150448fd38d90bdf",
+    "delete_sku": "ed81a187c76a6db4581f317eaa191d21bb17dcc853e85947689c187f39fe563d",
+    "monthly_cost_estimate": "09801b74520b0d6613e7952afba325839f4275104681f05d3a6a03336ea9084b",
+    "cost_per_release": "5370fe8853921e362021631a18436effe9071622833ddd721a75824362542b44",
+    "list_attachments": "ce05396dacd6a60b06902b2c3bf097f2569bf76749e01cc570eec3fcaf9eef37",
+    "read_attachment": "03b6995433ad6f398cb34bfd01b0508e0fa315cc81a7f6a395bc1dd90d8f6623",
+    "runtime_info": "6bcf2a7b2dcfc79e3242c46a112dad8e3c1f147a31a0e33ad3c97232c1f5a134",
+    "get_config_value": "c6dfed8916b204a77ee29eaae595b0986b73fc437c9e8f97b9a07957dfb748e3",
+    "disk_free": "b982e35738de599ae4b65c6f9cabd74a634429fb024ddf73f4bafd74a01fc34f",
+    "line_count": "78a864f55ce3a15f80e87b6e8d4bedd0fd4bc719cb40051830931adc8e01dbad",
+    "list_allowed_commands": "bfe71a7bd6cf0d6d3a450c3e67c1f55f6b53653115015ae72f1eda3ffbe37377",
+    "run_build": "c1b6f9a9ac9b26fbe4fc885bc35ef1d5eec7575899531d167c57c59a6257402a",
+    "list_notes": "021b9115d0564a00d9002b682afc71e30bbab6b999e62c9e1d4bfe45d53ab84a",
+    "read_note": "dede145bcf017ea1b45154dabee2471db9f3b9ffe291d3be4828b6809b091d89",
+    "search_notes": "69cd6df3b7833847865184a655c0a5df16410bd06d730793f65e58fbf186272b",
+    "workspace_settings": "0bfca1fcecb9443e79b6b6565ed8dfef383eadee419fe66ad0954548d0443f2d",
+    "send_notification": "24e67c78a3b12732a559b4cfb28da0fc1c9bc04c4330b92248ea686a52e3a27b",
+    "preview_notification": "f66fc4b4154b7959567b853689b43770ad59fa62e94a3dc53a2fb9ea65b631b5",
+    "delivery_limits": "ff3158d23cc837a46a44055fda1972eb3d25a8425d553b367f2819dce93725c0",
+    "release_info": "146844d048f9025af24eef3d0e4d9e44925fdc934ce9e5844adab6a794aa025a",
+    "verify_artifact_digest": "0c89534ae6445cf7d6e5a76e2abc161dbd31cfc59ecf88395929bccaf8334f72",
+    "run_smoke_check": "7f5dbefa5a71e2f1f36bb784648b1c962b0a83cce043a34822272445c0904146",
+    "setup_example": "16a74f9df222b437ebf4081e98dc5874d2ad0d4d59818f8b4bbbcc5f661c3332",
+    "health": "c056b95a7574d46d2d27595f6b8620e70473ee630c2df50427aa602850b23dfd",
+    "version": "157c3043cbbfcdb78f3bfd6a1335d7a4f21614448b8c878db79a07db2467780f",
+    "uptime": "dc074bd37c73eec9254e6e27f24fd7cc77a3095ecb1f7a608775bfc0a01e9fef"
+  }
+}
