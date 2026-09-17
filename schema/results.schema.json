@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mcp-sec-bench/schema/results.schema.json",
+  "title": "mcp-sec-bench results",
+  "description": "Machine-readable output of one benchmark run. Required fields are fixed by docs/scoring.md; changing them is a governance amendment, not a refactor.",
+  "type": "object",
+  "required": ["schema_version", "corpus_version", "generated_at", "scanners"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "corpus_version": {
+      "type": "string",
+      "description": "Content hash of the corpus manifests. A score is only comparable to another score from the same corpus_version."
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "runs_per_scanner": { "type": "integer", "minimum": 1 },
+    "scanners": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "scanner_id", "scanner_version", "adapter_version", "config_label",
+          "requires_signup", "stages_attempted", "runs", "metrics"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "scanner_id": { "type": "string" },
+          "display_name": { "type": "string" },
+          "scanner_version": { "type": "string" },
+          "adapter_version": { "type": "string" },
+          "config_label": {
+            "type": "string",
+            "description": "\"default\" is the documented default configuration. A vendor-supplied alternative appears as an additional row, never replacing the default."
+          },
+          "requires_signup": { "type": "boolean" },
+          "unavailable_reason": {
+            "type": ["string", "null"],
+            "description": "Set when the scanner could not be run. The row is still published, with the reason, rather than the scanner being silently omitted."
+          },
+          "stages_attempted": {
+            "type": "array",
+            "items": { "enum": ["static", "runtime"] }
+          },
+          "not_attempted": {
+            "type": "array",
+            "description": "Items excluded from this scanner's denominator because it does not attempt that stage. Not false negatives.",
+            "items": { "type": "string" }
+          },
+          "runs": { "type": "integer", "minimum": 1 },
+          "metrics": {
+            "type": "object",
+            "required": ["recall_per_class", "recall_overall", "precision_overall"],
+            "additionalProperties": false,
+            "properties": {
+              "recall_per_class": {
+                "type": "object",
+                "description": "class -> {mean, min, max}. null mean means no attempted item in that class.",
+                "additionalProperties": {
+                  "type": ["object", "null"],
+                  "properties": {
+                    "mean": { "type": ["number", "null"] },
+                    "min": { "type": ["number", "null"] },
+                    "max": { "type": ["number", "null"] }
+                  }
+                }
+              },
+              "recall_overall": {
+                "type": "object",
+                "properties": {
+                  "mean": { "type": ["number", "null"] },
+                  "min": { "type": ["number", "null"] },
+                  "max": { "type": ["number", "null"] }
+                }
+              },
+              "precision_overall": {
+                "type": "object",
+                "properties": {
+                  "mean": { "type": ["number", "null"] },
+                  "min": { "type": ["number", "null"] },
+                  "max": { "type": ["number", "null"] }
+                }
+              },
+              "near_miss_mean": { "type": "number" },
+              "unmapped_mean": { "type": "number" },
+              "high_variance": {
+                "type": "boolean",
+                "description": "True when any per-class recall range exceeds 20 percentage points."
+              },
+              "variance_detail": {
+                "type": "object",
+                "additionalProperties": { "type": "number" }
+              }
+            }
+          },
+          "items": {
+            "type": "array",
+            "description": "Per-run, per-item outcomes. The audit trail behind the metrics.",
+            "items": {
+              "type": "object",
+              "required": ["run_index", "server", "outcome"],
+              "additionalProperties": false,
+              "properties": {
+                "run_index": { "type": "integer" },
+                "server": { "type": "string" },
+                "class": { "type": ["string", "null"] },
+                "outcome": {
+                  "enum": ["true_positive", "false_negative", "false_positive",
+                           "tolerated", "unmapped", "not_applicable", "not_attempted"]
+                },
+                "stage_credited": { "type": ["string", "null"] },
+                "finding_ref": { "type": ["string", "null"] },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "findings": {
+            "type": "array",
+            "description": "Every finding the scanner produced, with the mapping decision applied to it. mapping_rationale_id makes any published number traceable to the specific judgment call behind it.",
+            "items": {
+              "type": "object",
+              "required": ["run_index", "raw_label"],
+              "additionalProperties": false,
+              "properties": {
+                "run_index": { "type": "integer" },
+                "raw_label": { "type": "string" },
+                "mapped_class": { "type": ["string", "null"] },
+                "mapped_server": { "type": ["string", "null"] },
+                "mapping_rationale_id": { "type": ["string", "null"] },
+                "file": { "type": ["string", "null"] },
+                "line": { "type": ["integer", "null"] },
+                "severity": { "type": ["string", "null"] },
+                "message": { "type": "string" }
+              }
+            }
+          },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
