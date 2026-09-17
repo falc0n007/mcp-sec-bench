@@ -64,6 +64,30 @@ one of them is synthetic.
 - Contributions containing a real credential — live, expired, or revoked — are
   rejected. An expired real key is still a real key that existed.
 
+**They are realistic enough that GitHub blocks the push.** Publishing this
+repository was rejected by GitHub secret scanning, which identified the planted
+`AKIA...` access key id and its 40-character secret as an Amazon AWS credential
+pair.
+
+That is the A7 design goal confirmed by a production detector rather than
+asserted by us. [taxonomy.md](taxonomy.md) calls this an open tension: planted
+values have to be realistic enough that format-aware and entropy-based
+detectors fire, while being verifiably non-functional. A detector that ignored
+them would make the A7 measurement meaningless. GitHub's does not ignore them.
+
+The operational consequence, which anyone forking or contributing will hit:
+
+- Publishing this corpus to GitHub requires allowing those specific detections
+  through push protection. That is a deliberate, reviewable act by the
+  repository owner, and that is the right place for the decision to sit.
+- Do **not** resolve a blocked push by weakening a synthetic credential until
+  the scanner stops noticing. That would leave the corpus looking healthy while
+  A7 quietly stopped testing anything.
+- Every flagged value must first be traced to
+  `tools/synthetic_credentials.py`. `tools/check_no_real_credentials.py` is
+  what establishes that, and it should be run and seen to pass before anything
+  is allowed through.
+
 ## What we will not accept
 
 Contributions are refused, without exception, if they:
