@@ -41,10 +41,10 @@
             "type": "array",
             "items": { "enum": ["static", "runtime"] }
           },
-          "not_attempted": {
+          "not_attempted_classes": {
             "type": "array",
-            "description": "Items excluded from this scanner's denominator because it does not attempt that stage. Not false negatives.",
-            "items": { "type": "string" }
+            "description": "Attack CLASSES excluded from this scanner's denominator because it does not attempt the stage they are reachable from. Class identifiers (\"A4\"), not (server, class) item identifiers -- elsewhere in this project \"item\" means a (server, class) pair, so this field is named for what it holds. Derivable from stages_attempted and the taxonomy's surface table. These are NOT false negatives.",
+            "items": { "enum": ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"] }
           },
           "runs": { "type": "integer", "minimum": 1 },
           "metrics": {
@@ -54,7 +54,7 @@
             "properties": {
               "recall_per_class": {
                 "type": "object",
-                "description": "class -> {mean, min, max}. null mean means no attempted item in that class.",
+                "description": "class -> {mean, min, max}. A null mean means no attempted item in that class, which is different from a mean of 0.0. Invariant, enforced by validate_results because JSON Schema cannot express it: min <= mean <= max, and either all three are null or all three are populated.",
                 "additionalProperties": {
                   "type": ["object", "null"],
                   "properties": {
