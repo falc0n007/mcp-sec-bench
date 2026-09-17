@@ -27,18 +27,26 @@ reader ever finds a scoreboard whose publisher quietly became a competitor.
 
 ## Scoreboard
 
-**No results are published yet, and that is deliberate.**
+**No scoreboard table is published yet. The disclosure round is running now.**
 
-The runner works and produces scores. They are withheld because
+The runner works and produces scores, and early figures appear in this
+repository's commit history. A ranked scoreboard is not published here until
+[the disclosure round](docs/disclosure.md) closes.
+
+**A deviation from our own policy, recorded rather than left to be discovered.**
 [governance.md](docs/governance.md#disclosure-before-publication) commits to
-something stricter than publishing when ready: every scanner's maintainers
-receive their full results, the methodology, and the exact mapping decisions
-applied to their tool, with **14 days** to respond, before anyone else sees a
-number. That round has not run.
+every scanner's maintainers receiving their full results, the methodology, and
+the exact mapping decisions applied to their tool, with 14 days to respond,
+*before* anyone else sees a number. This repository was made public with
+preliminary figures already in its history, so for the first round that
+ordering was not honoured. The round is being run immediately rather than
+retroactively justified, corrections will be folded in, and the deviation is
+logged in [decisions.md](docs/decisions.md).
 
-Publishing first and disclosing afterwards would make this a different kind of
-project than the one described below, so the scoreboard lands here when Phase 3
-closes and not before.
+If you maintain a scanner measured here and are reading this before hearing
+from us, that is the failure this note is admitting to. The methodology,
+the mapping decisions, and the dispute process are all in this repository, and
+a result you can show to be wrong will be corrected.
 
 What is already public and reviewable is everything the numbers will be
 produced by:

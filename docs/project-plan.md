@@ -263,7 +263,7 @@ which is exactly why it goes through both before anyone quotes it.
 
 **Phase 3 — Disclosure**
 
-- [ ] Draft disclosure email template
+- [x] Draft disclosure email template
 - [ ] Identify maintainer contacts for each scanner
 - [ ] Send results with 14-day window
 - [ ] Log responses
