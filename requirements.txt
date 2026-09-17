@@ -1,0 +1,6 @@
+# Pinned exactly. A corpus version must rebuild identically or a score is not
+# comparable to itself, let alone across scanners.
+fastmcp==4.0.4
+httpx==0.28.1
+jsonschema==4.26.0
+pytest==9.1.1

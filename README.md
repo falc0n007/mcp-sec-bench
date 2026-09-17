@@ -27,12 +27,21 @@ reader ever finds a scoreboard whose publisher quietly became a competitor.
 
 ## Scoreboard
 
-No results yet. The benchmark is in Phase 0 — the taxonomy, scoring rules, and
-governance policy are written and committed **before** any scanner has been
-run, which is the ordering that makes them worth anything.
+**No results are published yet, and that is deliberate.**
 
-The scoreboard lands here, at the top of this file, when Phase 2 completes.
-Until then, the rules it will be judged by are already public and reviewable:
+The runner works and produces scores. They are withheld because
+[governance.md](docs/governance.md#disclosure-before-publication) commits to
+something stricter than publishing when ready: every scanner's maintainers
+receive their full results, the methodology, and the exact mapping decisions
+applied to their tool, with **14 days** to respond, before anyone else sees a
+number. That round has not run.
+
+Publishing first and disclosing afterwards would make this a different kind of
+project than the one described below, so the scoreboard lands here when Phase 3
+closes and not before.
+
+What is already public and reviewable is everything the numbers will be
+produced by:
 
 | Document | What it fixes |
 | --- | --- |
@@ -44,6 +53,9 @@ Until then, the rules it will be judged by are already public and reviewable:
 | [Project plan](docs/project-plan.md) | Phases, timeline, and task tracker |
 | [The corpus](corpus/README.md) | 11 vulnerable servers, 4 benign controls, and what each one is for |
 | [The lab](lab/README.md) | Bringing the sandboxed corpus online, and how egress is contained |
+| [The runner](runner/README.md) | How scanner output becomes a score, and the separations that keep it reviewable |
+| [Mapping rationale](docs/mapping-rationale.md) | Every decision translating a scanner's vocabulary into ours |
+| [Scanner survey](docs/scanner-survey.md) | What each candidate scanner actually is, verified by installing and running it |
 
 ## Why this exists
 
@@ -109,9 +121,29 @@ an honest account of the dual-use tradeoff, is in [ethics.md](docs/ethics.md).
 | --- | --- |
 | 0 — Scope and neutrality design | **Complete** |
 | 1 — Corpus | **Complete** |
-| 2 — Runner and normalization | Next |
-| 3 — Private disclosure round | Not started |
+| 2 — Runner and normalization | **Complete** |
+| 3 — Private disclosure round | Next |
 | 4 — Public launch | Not started |
+
+## Running it
+
+From a clean checkout:
+
+```bash
+make setup      # venv plus pinned dependencies
+make images     # lab and scanner images, all from pinned Dockerfiles
+make lab-up     # corpus online, egress blocked
+make verify     # manifests, credentials, every server, the lab, the tests
+make scoreboard # run the benchmark and render the result
+```
+
+`make scoreboard` writes to `results/local/`, which is gitignored, so a
+development run can never be mistaken for a published score.
+
+Four adapters are wired: three run credential-free, and one is published as
+unavailable because a token gates all of its analysis. A scanner we cannot run
+still gets a row carrying the reason, because omitting it would quietly turn
+"we could not run this" into "this was not considered".
 
 ## Adding your scanner
 
