@@ -18,6 +18,8 @@ Two rules here carry policy rather than convenience:
 
 from __future__ import annotations
 
+import socket
+import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +30,9 @@ from .models import ScannerRun
 
 DEFAULT_RUNS = 5  # docs/scoring.md: N >= 5, mean and range, never a single run.
 
+ROOT = Path(__file__).resolve().parent.parent
+COMPOSE_FILE = ROOT / "lab" / "docker-compose.yml"
+
 
 @dataclass
 class ExecutionPlan:
@@ -37,6 +42,15 @@ class ExecutionPlan:
     lab_host: str = "127.0.0.1"
     lab_token: str = "lab-token-do-not-reuse"
     raw_dir: Path | None = None
+    #: Restart the corpus between runtime runs so each run is an independent
+    #: trial. Some corpus servers are deliberately stateful -- a02's rug-pull
+    #: descriptor mutates on the Nth tools/list -- and that state otherwise
+    #: persists across runs, which breaks the repeat-run design in
+    #: docs/scoring.md at its root: the observed spread stops being the
+    #: scanner's nondeterminism and becomes the target's accumulated state,
+    #: while results start depending on how much prior scanning happened.
+    reset_between_runs: bool = True
+    compose_file: Path = COMPOSE_FILE
 
 
 @dataclass
@@ -53,6 +67,52 @@ class ExecutionOutcome:
     runs: list[ScannerRun] = field(default_factory=list)
     unavailable_reason: str | None = None
     notes: list[str] = field(default_factory=list)
+
+
+def _port_open(host: str, port: int) -> bool:
+    with socket.socket() as s:
+        s.settimeout(1.0)
+        return s.connect_ex((host, port)) == 0
+
+
+def reset_targets(plan: ExecutionPlan, timeout: float = 90.0) -> tuple[bool, str]:
+    """Restart the corpus so the next run starts from a known state.
+
+    Returns (ok, detail). A failure is reported rather than raised: a run
+    against un-reset targets is still data, but it is data whose spread cannot
+    be attributed to the scanner, and the caller must be able to say so on the
+    scoreboard instead of quietly publishing it as scanner variance.
+    """
+    if not plan.compose_file.exists():
+        return False, f"no compose file at {plan.compose_file}"
+
+    services = sorted(plan.corpus.servers)
+    try:
+        p = subprocess.run(
+            ["docker", "compose", "-f", str(plan.compose_file), "restart",
+             "--timeout", "10", *services],
+            capture_output=True, text=True, timeout=timeout)
+    except FileNotFoundError:
+        return False, "docker is not installed"
+    except subprocess.TimeoutExpired:
+        return False, f"restarting the corpus exceeded {timeout:.0f}s"
+    if p.returncode != 0:
+        return False, (p.stderr or p.stdout).strip()[:300]
+
+    # A restarted server is not immediately listening, and scanning one that is
+    # still coming up would read as a detection failure.
+    deadline = time.time() + timeout
+    pending = {s.server_id: s.port for s in plan.corpus.servers.values()
+               if s.transport == "http"}
+    while pending and time.time() < deadline:
+        for sid, port in list(pending.items()):
+            if _port_open(plan.lab_host, port):
+                del pending[sid]
+        if pending:
+            time.sleep(0.5)
+    if pending:
+        return False, f"still not listening after restart: {sorted(pending)}"
+    return True, f"restarted {len(services)} corpus services"
 
 
 def static_target(corpus: Corpus, scope: str = "corpus") -> StaticTarget:
@@ -118,8 +178,26 @@ def execute(adapter: Adapter, plan: ExecutionPlan) -> ExecutionOutcome:
             f"Does not attempt {', '.join(skipped)}; those items are excluded "
             f"from its denominator rather than counted as misses.")
 
+    reset_warned = False
     for stage in attempted:
         for idx in range(1, plan.runs + 1):
+            # Only the runtime stage observes server state; a static scan reads
+            # files and cannot be affected by it.
+            if stage == "runtime" and plan.reset_between_runs:
+                ok, detail = reset_targets(plan)
+                if not ok and not reset_warned:
+                    reset_warned = True
+                    outcome.notes.append(
+                        f"runs are NOT independent: could not reset targets "
+                        f"between runs ({detail}). Any spread below may be the "
+                        f"corpus's accumulated state rather than this "
+                        f"scanner's nondeterminism.")
+            elif stage == "runtime" and not plan.reset_between_runs:
+                if not reset_warned:
+                    reset_warned = True
+                    outcome.notes.append(
+                        "runs are NOT independent: target reset was disabled, "
+                        "so stateful servers carry state across runs.")
             started = time.monotonic()
             try:
                 if stage == "static":

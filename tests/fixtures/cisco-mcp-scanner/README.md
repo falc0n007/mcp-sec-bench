@@ -2,8 +2,12 @@
 
 Every file here except the two prefixed `SYNTHETIC-` is byte-for-byte stdout from
 `cisco-ai-mcp-scanner` **4.8.4** running in
-`mcp-sec-bench/cisco-mcp-scanner:4.8.4`, captured on 2026-09-17 against the lab
-at `corpus_version v1-0f9650d5044b`. They exist so `tests/test_adapter_cisco.py`
+`mcp-sec-bench/cisco-mcp-scanner:4.8.4`, captured on 2026-09-17 against the lab.
+`corpus_version` was `v1-0f9650d5044b` at capture time and became
+`v1-0ef4bd851ab8` when the A1/A3 detection-surface amendment landed; that
+amendment edited manifest surface declarations only and left every corpus server
+byte-identical, so these captures still describe the servers as they run. They
+exist so `tests/test_adapter_cisco.py`
 can check the parser, and so `mapping/cisco-mcp-scanner.json` can claim
 `label_provenance: captured-from-real-output` against something a reviewer can
 read.

@@ -247,7 +247,7 @@ which is exactly why it goes through both before anyone quotes it.
 **Phase 2 — Runner**
 
 - [x] Runner skeleton and results JSON schema
-- [ ] Adapter: Cisco mcp-scanner
+- [x] Adapter: Cisco mcp-scanner
 - [ ] Adapter: Snyk agent-scan (with token path) — blocked: needs a free SNYK_TOKEN
 - [ ] Adapter: sentinel-scan-cli
 - [x] Adapter: mcp-guard

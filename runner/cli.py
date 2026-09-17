@@ -25,6 +25,7 @@ from .adapters.fixtures.near_miss import NearMissAdapter
 from .adapters.fixtures.oracle import OracleAdapter
 from .adapters.fixtures.overflagger import OverflaggerAdapter
 from .adapters.fixtures.static_only import StaticOnlyAdapter
+from .adapters.cisco_mcp_scanner import CiscoMcpScannerAdapter
 from .adapters.mcp_guard import McpGuardAdapter
 from .adapters.ramparts import RampartsAdapter
 from .aggregate import aggregate
@@ -44,7 +45,7 @@ FIXTURES = [OracleAdapter, OverflaggerAdapter, StaticOnlyAdapter,
 #: Real adapters, in the order docs/project-plan.md records. A scanner we cannot
 #: run is still listed and still publishes a row carrying its reason, because
 #: governance.md requires that rather than a quiet omission.
-REAL_ADAPTERS: list = [McpGuardAdapter, RampartsAdapter]
+REAL_ADAPTERS: list = [CiscoMcpScannerAdapter, McpGuardAdapter, RampartsAdapter]
 
 
 def _adapters(selection: str) -> list:
@@ -95,6 +96,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--detail", action="store_true", help="also print per-class recall")
     ap.add_argument("--lab-host", default="127.0.0.1")
     ap.add_argument("--lab-token", default="lab-token-do-not-reuse")
+    ap.add_argument("--no-reset", action="store_true",
+                    help="do not restart the corpus between runtime runs; runs "
+                         "then share state and the spread is not attributable "
+                         "to the scanner")
     args = ap.parse_args(argv)
 
     corpus = load_corpus()
@@ -116,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
 
     plan = ExecutionPlan(corpus=corpus, runs=args.runs, stages=stages,
                          lab_host=args.lab_host, lab_token=args.lab_token,
-                         raw_dir=out_dir / "raw")
+                         raw_dir=out_dir / "raw",
+                         reset_between_runs=not args.no_reset)
 
     reports: list[ScannerReport] = []
     per_items: dict[str, list] = {}
