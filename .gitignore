@@ -7,8 +7,12 @@ venv/
 .pytest_cache/
 .ruff_cache/
 
-# Runner output
-results/raw/
+# Runner output.
+# results/raw/ is deliberately NOT ignored: docs/governance.md commits to
+# committing raw scanner output for every published run, so anyone can check
+# our arithmetic and our mappings without rerunning anything. Scratch runs go
+# under results/local/ instead.
+results/local/
 results/*.local.json
 .scanner-tokens
 

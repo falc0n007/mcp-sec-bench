@@ -29,6 +29,8 @@ the people who made it. Append; do not rewrite.
 | 2026-09-17 | A6 `not_applicable` is enumerated, not derived from whatever a manifest declares | Two servers had declared an empty `sensitive_tools`, which marked them `not_applicable` for A6 and removed them from that denominator -- a free pass for a scanner that over-flags A6, with the same effect as an unauthorised tolerated entry. An authenticated HTTP server with real tools is a true negative for A6 (it could have been authless and is not), not structurally incapable of it. Only `c04-status-service` may sit outside the denominator, because being unauthenticated with no sensitive capability is the entire point of that control. Enforced by `tools/validate_manifests.py` and negative-tested. |
 | 2026-09-17 | Near-miss wording corrected: a near miss never forces a false negative | As written the rule said a near miss is "scored as a false positive on the reported class and a false negative on the declared one", which contradicts the rule that an item has exactly one outcome and that duplicate findings collapse. If the declared class was separately found it is a true positive and cannot simultaneously be a false negative. Reworded so the false negative arises from the ordinary rule when nothing found the class, rather than being imposed by the near miss. This is a clarification to the only self-consistent reading, not a behaviour change; no results exist. Surfaced by the scoring engine implementation. |
 | 2026-09-17 | RawFinding carries an explicit `stage` | A2 is creditable from either stage, so a finding on a dual-surface class otherwise has its stage guessed. The field replaces a convention of stashing it in the untyped `raw` dict. |
+| 2026-09-17 | `c02-webhook-notifier` carries NO tolerated A5 entry | A label like "outbound network call in a tool" fires identically on c02 and on `a05-argument-exfiltration`; the servers differ in the tool's declared purpose, not in the shape of the code, and the taxonomy is explicit that a declared-destination sender is not A5. Telling them apart is exactly the capability under measurement, so tolerating A5 on c02 would excuse the failure the control exists to catch. It is a false positive. Decided before the corpus was tagged, because the tolerated set freezes at tag time and a later addition would require a governance amendment plus re-disclosure. |
+| 2026-09-17 | Mapping keys on the scanner's label, never on the target server | A mapping table that resolved a label differently depending on which server the finding landed on would be teaching the mapper the answer key, which is the overfitting the private held-back set exists to detect. Mappings are frozen against a corpus_version before a run. |
 
 ## Open questions
 
@@ -43,6 +45,14 @@ Carried forward. Resolved entries move into the table above with a date.
   set. Needs a real corpus to reason about; resolve in Phase 1.
 - Whether `unmapped` findings should eventually graduate into new taxonomy
   classes automatically, or only by amendment. Revisit once there is run data.
+- **A1 vs A4 is knowingly mis-scored in one case.** `taxonomy.md` grants A4
+  credit to a scanner that walks non-source data files and flags the poisoned
+  fixture. Such a finding arrives in the static stage, where the mapping layer
+  resolves injection labels to A1 -- so a legitimate A4 detection scores as a
+  false positive on a01 plus a near miss on a04. The alternative, discriminating
+  on finding text, was rejected as unreviewable. The taxonomy expects this route
+  to be rare, so the cost is small, but it is a known defect rather than an
+  unknown one. Resolve before Phase 4.
 - **Should the near-miss counter be narrowed?** As defined, any wrong class on
   a server that declares something counts, so the counter is trivially
   inflated: the `overflagger` fixture earns 99 near misses alongside 137 false

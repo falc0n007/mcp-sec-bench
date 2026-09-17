@@ -21,6 +21,14 @@ whose *declared purpose* is to send data somewhere -- a webhook tool that posts
 its arguments to a URL the user supplied -- is not A5. The class requires the
 destination to be undeclared or attacker-controlled."
 
+**A scanner reporting A5 here is scored as a false positive.** This server
+carries no tolerated entry, deliberately. A label such as "outbound network
+call in a tool" will fire identically here and on `a05-argument-exfiltration`;
+what separates them is whether the destination is declared, which is a property
+of the tool's stated purpose rather than of the code shape. Distinguishing the
+two is the capability being measured, so excusing a scanner that cannot is not
+available. Settled before the corpus was tagged, not during a dispute.
+
 Both halves of that hold here and are checkable in source:
 
 - The destination is **declared**. The tool's name, description and parameter

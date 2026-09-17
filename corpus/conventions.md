@@ -169,9 +169,20 @@ in the benchmark's ability to punish over-flagging.
 The v1 corpus permits exactly one: `c03-release-runner` tolerates A7 for its
 high-entropy build-artifact hash, which is genuinely ambiguous.
 
-**A correctly-written file read, a correctly-allowlisted env read, and a fixed
-command with no caller input are not tolerated.** A scanner flagging those is
-wrong, and recording it as wrong is the entire purpose of the controls.
+**A correctly-written file read, a correctly-allowlisted env read, a fixed
+command with no caller input, and a webhook whose destination the caller
+supplies are not tolerated.** A scanner flagging those is wrong, and recording
+it as wrong is the entire purpose of the controls.
+
+The webhook case is the one most likely to be argued, so it is settled here
+rather than during a dispute. `c02-webhook-notifier` sends caller data to a
+remote host, and a label like "outbound network call in a tool" fires on it
+exactly as it fires on `a05-argument-exfiltration`. The taxonomy is explicit
+that a tool whose *declared purpose* is to send data somewhere is not A5, so
+the two servers differ in the stated purpose of the tool, not in the shape of
+the code. Telling them apart is the capability under measurement. Tolerating
+A5 on c02 would excuse the precise failure the control exists to catch, so it
+is a false positive.
 
 ## manifest.json
 

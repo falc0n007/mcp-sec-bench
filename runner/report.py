@@ -108,6 +108,17 @@ def _high_variance_suffix(report: ScannerReport) -> str:
     return f" {HIGH_VARIANCE_MARKER}" if report.high_variance else ""
 
 
+#: Text tables are fixed-width, and an unbounded notes column pushes every
+#: other column off screen. Markdown wraps, so it keeps the full text.
+NOTES_MAX = 72
+
+
+def _truncate_note(text: str) -> str:
+    if len(text) <= NOTES_MAX:
+        return text
+    return text[: NOTES_MAX - 3].rstrip() + "..."
+
+
 def _unavailable(report: ScannerReport) -> str | None:
     """Return the unavailable_reason if this report represents a scanner that
     could not be run at all, else None.
@@ -346,7 +357,7 @@ def render_text(
                 _fmt_mean_range(report.precision_mean, report.precision_range),
                 f"{report.near_miss_mean:.2f}",
                 f"{report.unmapped_mean:.2f}",
-                "; ".join(notes),
+                _truncate_note("; ".join(notes)),
             ]
         )
 
