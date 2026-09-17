@@ -246,16 +246,20 @@ which is exactly why it goes through both before anyone quotes it.
 
 **Phase 2 — Runner**
 
-- [ ] Runner skeleton and results JSON schema
+- [x] Runner skeleton and results JSON schema
 - [ ] Adapter: Cisco mcp-scanner
-- [ ] Adapter: Snyk agent-scan (with token path)
+- [ ] Adapter: Snyk agent-scan (with token path) — blocked: needs a free SNYK_TOKEN
 - [ ] Adapter: sentinel-scan-cli
-- [ ] Adapter: mcp-guard
-- [ ] Taxonomy mapping layer + per-mapping rationale doc
-- [ ] Credit rules implemented and documented
-- [ ] N=5 repeat runs with mean/spread reporting
-- [ ] Live-endpoint stage for runtime-only classes
-- [ ] Scoreboard renderer (table + JSON)
+- [x] Adapter: mcp-guard
+- [x] Adapter: Ramparts (added after the scanner survey)
+- [x] Taxonomy mapping layer + per-mapping rationale doc
+- [x] Credit rules implemented and documented
+- [x] N=5 repeat runs with mean/spread reporting
+- [x] Live-endpoint stage for runtime-only classes
+- [x] Scoreboard renderer (table + JSON)
+- [ ] Verify the one-command run works from a genuinely clean checkout
+      (venv creation, dependency install, and scanner image builds are all
+      currently manual)
 
 **Phase 3 — Disclosure**
 
