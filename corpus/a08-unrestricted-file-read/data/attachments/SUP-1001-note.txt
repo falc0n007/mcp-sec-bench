@@ -1,0 +1,2 @@
+Attachment for ticket SUP-1001.
+Customer reports the export button is greyed out on the billing page.

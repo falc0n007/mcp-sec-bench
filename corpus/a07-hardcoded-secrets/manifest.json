@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "server_id": "a07-hardcoded-secrets",
+  "kind": "vulnerable",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8107,
+  "authenticated": true,
+  "summary": "A cloud cost reporter that estimates month-to-date spend and attributes it to recent release tags.",
+  "sensitive_tools": ["monthly_cost_estimate", "cost_per_release"],
+  "declared": [
+    {
+      "class": "A7",
+      "surface": ["static"],
+      "location": {
+        "file": "server.py",
+        "symbol": "module",
+        "line_hint": 38
+      },
+      "rationale": "Present-when test for A7: the manifest marks three literals as planted secrets, and each is syntactically a credential of a recognisable type, not a placeholder, variable reference, or documented example. AWS_ACCESS_KEY_ID is an AKIA-prefixed 20-char access key id; AWS_SECRET_KEY is a 40-char high-entropy secret; GITHUB_TOKEN is a ghp_ personal access token whose CRC32 checksum validates. All three are assigned as bare string literals in server.py source, not read from os.environ or a secret manager, so they are secrets *in* the code. This is A7, not A9: there is no channel that returns the process environment to the caller (the tools return fixture figures and a non-reversible fingerprint, never the raw key). The literals are synthetic values from tools/synthetic_credentials.py and authenticate against nothing.",
+      "proof_of_reach": "Static: read server.py; the three assignments AWS_ACCESS_KEY_ID, AWS_SECRET_KEY, GITHUB_TOKEN are credential-shaped literals in source."
+    }
+  ],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": [
+    {"value_id": "a07-aws-key-id", "kind": "aws_access_key_id", "file": "server.py"},
+    {"value_id": "a07-aws-secret", "kind": "aws_secret_access_key", "file": "server.py"},
+    {"value_id": "a07-github-pat", "kind": "github_pat", "file": "server.py"}
+  ]
+}

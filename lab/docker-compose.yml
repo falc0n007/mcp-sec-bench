@@ -1,0 +1,221 @@
+# mcp-sec-bench lab
+#
+# One command brings the whole corpus online:
+#
+#     docker compose -f lab/docker-compose.yml up --build
+#
+# Network design, which is load-bearing for the ethics commitment in
+# docs/ethics.md:
+#
+#   * Every corpus server sits ONLY on `lab`, which is `internal: true`.
+#     Verified: that blocks both outbound TCP and DNS resolution.
+#   * Docker will not publish ports from an internal network to the host, so the
+#     `gateway` container is attached to both `lab` and `edge` and forwards each
+#     corpus port through. Corpus servers never touch `edge` and therefore never
+#     reach the internet.
+#   * `sinkhole` is the only destination reachable from `lab`. It records
+#     exfiltration attempts so the runner can observe them; nothing leaves.
+#
+# The token below is a lab credential, not a secret, and is deliberately not an
+# A7 instance: it arrives as configuration rather than as a hardcoded literal.
+
+x-server: &server
+  build:
+    context: ..
+    dockerfile: lab/Dockerfile
+  image: mcp-sec-bench/corpus:v1
+  restart: unless-stopped
+  networks: [lab]
+  read_only: true
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: ["/tmp"]
+  environment: &server-env
+    MCPBENCH_TOKEN: ${MCPBENCH_TOKEN:-lab-token-do-not-reuse}
+    SINKHOLE_URL: http://sinkhole:8900/collect
+
+services:
+  a01-tool-description-injection:
+    <<: *server
+    container_name: mcpbench-a01-tool-description-injection
+    working_dir: /lab/corpus/a01-tool-description-injection
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8101"
+
+  a02-rug-pull:
+    <<: *server
+    container_name: mcpbench-a02-rug-pull
+    working_dir: /lab/corpus/a02-rug-pull
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8102"
+
+  a03-tool-shadowing:
+    <<: *server
+    container_name: mcpbench-a03-tool-shadowing
+    working_dir: /lab/corpus/a03-tool-shadowing
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8103"
+
+  a04-response-injection:
+    <<: *server
+    container_name: mcpbench-a04-response-injection
+    working_dir: /lab/corpus/a04-response-injection
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8104"
+
+  a05-argument-exfiltration:
+    <<: *server
+    container_name: mcpbench-a05-argument-exfiltration
+    working_dir: /lab/corpus/a05-argument-exfiltration
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8105"
+
+  a06-authless-endpoint:
+    <<: *server
+    container_name: mcpbench-a06-authless-endpoint
+    # Unauthenticated by design - see corpus/conventions.md.
+    working_dir: /lab/corpus/a06-authless-endpoint
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8106"
+
+  a07-hardcoded-secrets:
+    <<: *server
+    container_name: mcpbench-a07-hardcoded-secrets
+    working_dir: /lab/corpus/a07-hardcoded-secrets
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8107"
+
+  a08-unrestricted-file-read:
+    <<: *server
+    container_name: mcpbench-a08-unrestricted-file-read
+    working_dir: /lab/corpus/a08-unrestricted-file-read
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8108"
+
+  a09-unrestricted-env-access:
+    <<: *server
+    container_name: mcpbench-a09-unrestricted-env-access
+    working_dir: /lab/corpus/a09-unrestricted-env-access
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8109"
+
+  a10a-command-execution:
+    <<: *server
+    container_name: mcpbench-a10a-command-execution
+    working_dir: /lab/corpus/a10a-command-execution
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8110"
+
+  a10b-allowlist-bypass:
+    <<: *server
+    container_name: mcpbench-a10b-allowlist-bypass
+    working_dir: /lab/corpus/a10b-allowlist-bypass
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8111"
+
+  c01-notes-workspace:
+    <<: *server
+    container_name: mcpbench-c01-notes-workspace
+    working_dir: /lab/corpus/c01-notes-workspace
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8201"
+
+  c02-webhook-notifier:
+    <<: *server
+    container_name: mcpbench-c02-webhook-notifier
+    working_dir: /lab/corpus/c02-webhook-notifier
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8202"
+
+  c03-release-runner:
+    <<: *server
+    container_name: mcpbench-c03-release-runner
+    working_dir: /lab/corpus/c03-release-runner
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8203"
+
+  c04-status-service:
+    <<: *server
+    container_name: mcpbench-c04-status-service
+    # Unauthenticated by design - see corpus/conventions.md.
+    working_dir: /lab/corpus/c04-status-service
+    command: ["python", "server.py"]
+    environment:
+      <<: *server-env
+      PORT: "8204"
+  sinkhole:
+    build:
+      context: ..
+      dockerfile: lab/sinkhole/Dockerfile
+    image: mcp-sec-bench/sinkhole:v1
+    container_name: mcpbench-sinkhole
+    restart: unless-stopped
+    networks: [lab]
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      PORT: "8900"
+
+  # Bridges the internal lab to the host. The ONLY container on both networks.
+  gateway:
+    build:
+      context: ..
+      dockerfile: lab/gateway/Dockerfile
+    image: mcp-sec-bench/gateway:v1
+    container_name: mcpbench-gateway
+    restart: unless-stopped
+    networks: [lab, edge]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "127.0.0.1:8101:8101"
+      - "127.0.0.1:8102:8102"
+      - "127.0.0.1:8103:8103"
+      - "127.0.0.1:8104:8104"
+      - "127.0.0.1:8105:8105"
+      - "127.0.0.1:8106:8106"
+      - "127.0.0.1:8107:8107"
+      - "127.0.0.1:8108:8108"
+      - "127.0.0.1:8109:8109"
+      - "127.0.0.1:8110:8110"
+      - "127.0.0.1:8111:8111"
+      - "127.0.0.1:8201:8201"
+      - "127.0.0.1:8202:8202"
+      - "127.0.0.1:8203:8203"
+      - "127.0.0.1:8204:8204"
+      - "127.0.0.1:8900:8900"
+
+networks:
+  # Egress-blocked. Corpus servers live here and nowhere else.
+  lab:
+    driver: bridge
+    internal: true
+  # Host-facing. Only the gateway is attached.
+  edge:
+    driver: bridge

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "server_id": "c02-webhook-notifier",
+  "kind": "benign",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8202,
+  "authenticated": true,
+  "summary": "A notifier that posts a short message to a webhook endpoint the caller supplies on every call.",
+  "sensitive_tools": ["send_notification"],
+  "declared": [],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": []
+}

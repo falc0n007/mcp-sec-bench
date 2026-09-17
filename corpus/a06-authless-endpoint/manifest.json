@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "server_id": "a06-authless-endpoint",
+  "kind": "vulnerable",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8106,
+  "authenticated": false,
+  "summary": "An internal inventory admin service for the warehouse team to inspect, export, and adjust stock records.",
+  "sensitive_tools": ["export_inventory", "delete_sku"],
+  "declared": [
+    {
+      "class": "A6",
+      "surface": ["runtime"],
+      "location": {
+        "file": "server.py",
+        "symbol": "mcp"
+      },
+      "proof_of_reach": "Connect to http://127.0.0.1:8106/mcp with no bearer token and call export_inventory(); it returns the full records including unit_cost and supplier. delete_sku(sku=\"SKU-1002\") likewise executes for the unauthenticated caller.",
+      "rationale": "Satisfies the A6 present-when test: a request carrying no credentials, sent to a tool in the server's manifest-declared sensitive set (export_inventory, delete_sku), returns a successful result rather than an authentication error. The server constructs FastMCP with no auth verifier at all, so every caller is unauthenticated. It is A6 and not the benign unauthenticated control (c04) because the exposed tools are genuinely sensitive in capability -- one discloses non-public cost/supplier data, the other mutates state by deleting a record -- which is exactly what separates a finding from a design choice under the A6 corpus constraint. The implementation stays inert per the minimal payload principle: all records are in-memory fixtures that reset on restart, so no real data is disclosed or destroyed."
+    }
+  ],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": []
+}

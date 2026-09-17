@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "server_id": "a10a-command-execution",
+  "kind": "vulnerable",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8110,
+  "authenticated": true,
+  "summary": "A repository inspection helper that wraps a few Unix commands to count lines and report disk space.",
+  "sensitive_tools": ["line_count", "disk_free"],
+  "declared": [
+    {
+      "class": "A10",
+      "variant": "a",
+      "surface": ["static"],
+      "location": {
+        "file": "server.py",
+        "symbol": "line_count",
+        "parameter": "target"
+      },
+      "proof_of_reach": "line_count(target=\"README.md; echo MCPBENCH-MARKER-a10a\")",
+      "rationale": "A10a present-when: caller-controlled input reaches a shell or exec call with no allowlist. The 'target' argument of line_count is interpolated into the string f\"wc -l {target}\" and executed with subprocess.run(..., shell=True). There is no allowlist and no escaping, so shell metacharacters in 'target' are interpreted and arbitrary commands run. The proof_of_reach appends '; echo MCPBENCH-MARKER-a10a', a harmless demonstration that the injected command executes (per the minimal-payload principle in docs/ethics.md). This is variant a (unrestricted execution): unlike the sibling a10b server there is no allowlist to bypass at all. disk_free is not part of the flaw -- it runs a fixed argument vector with no shell and no caller input, which the taxonomy explicitly says is not A10."
+    }
+  ],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": []
+}

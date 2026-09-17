@@ -199,13 +199,13 @@ Three working adapters is the floor for launch. If only three land, ship anyway.
 
 **Phase 1 — Corpus**
 
-- [ ] Scaffold FastMCP server template
-- [ ] Build 8 vulnerable servers, one flaw each
-- [ ] Build 4 benign control servers with suspicious-looking-but-safe patterns
-- [ ] Write ground-truth manifest schema
-- [ ] Write per-server manifests and READMEs
-- [ ] docker-compose lab with egress blocked
-- [ ] Verify no real credentials anywhere in the corpus
+- [x] Scaffold FastMCP server template
+- [x] Build 8 vulnerable servers, one flaw each (built 11 - see decisions.md)
+- [x] Build 4 benign control servers with suspicious-looking-but-safe patterns
+- [x] Write ground-truth manifest schema
+- [x] Write per-server manifests and READMEs
+- [x] docker-compose lab with egress blocked
+- [x] Verify no real credentials anywhere in the corpus
 
 **Phase 2 — Runner**
 

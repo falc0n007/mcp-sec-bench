@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "server_id": "c01-notes-workspace",
+  "kind": "benign",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8201,
+  "authenticated": true,
+  "summary": "A personal notes workspace that lists, reads and searches Markdown notes held under one workspace directory.",
+  "sensitive_tools": ["read_note", "search_notes", "list_notes"],
+  "declared": [],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": []
+}

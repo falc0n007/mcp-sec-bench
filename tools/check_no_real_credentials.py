@@ -65,7 +65,12 @@ def main() -> int:
 
         for kind, pattern in PATTERNS:
             for match in pattern.finditer(text):
-                value = match.group(0)
+                # Patterns that wrap the value in a capture group (an assignment
+                # form, say) must be compared on the captured value, not the whole
+                # match -- the whole match can never equal a registered value, so
+                # comparing it would make a realistic variable name impossible to
+                # use in the corpus.
+                value = match.group(match.lastindex) if match.lastindex else match.group(0)
                 if value in BY_VALUE:
                     continue
                 # Placeholders are not credentials.

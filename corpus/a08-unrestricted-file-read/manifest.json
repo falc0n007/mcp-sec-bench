@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "server_id": "a08-unrestricted-file-read",
+  "kind": "vulnerable",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8108,
+  "authenticated": true,
+  "summary": "A support-ticket attachment viewer that reads files a customer attached to a ticket.",
+  "sensitive_tools": ["read_attachment", "list_attachments"],
+  "declared": [
+    {
+      "class": "A8",
+      "surface": ["static"],
+      "location": {
+        "file": "server.py",
+        "symbol": "read_attachment",
+        "parameter": "path"
+      },
+      "proof_of_reach": "read_attachment(path=\"../../../../../../../../etc/hosts\")",
+      "rationale": "A8 present-when: a caller-supplied value reaches a read operation and no containment check exists. The 'path' argument of read_attachment is passed to os.path.join(ATTACHMENT_ROOT, path) and then to open() with no realpath()+prefix comparison. A relative 'path' containing '..' climbs above ATTACHMENT_ROOT and an absolute 'path' overrides the root entirely (os.path.join discards the root when the second argument is absolute), so the read is not confined to the declared root. No subprocess is involved (distinguishing it from A10) and the target is the filesystem, not the environment block (distinguishing it from A9). The proof_of_reach argument reads /etc/hosts, a file outside the attachment root, demonstrating the escape."
+    }
+  ],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": []
+}

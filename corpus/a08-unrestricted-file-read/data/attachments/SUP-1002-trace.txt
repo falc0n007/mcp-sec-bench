@@ -1,0 +1,2 @@
+Attachment for ticket SUP-1002.
+Stack trace pasted by customer during checkout failure.

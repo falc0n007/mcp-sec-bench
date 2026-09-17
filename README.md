@@ -42,6 +42,8 @@ Until then, the rules it will be judged by are already public and reviewable:
 | [Ethics and scope](docs/ethics.md) | Why a vulnerable-server corpus exists and what constrains it |
 | [Decision log](docs/decisions.md) | Every choice made so far, dated, with reasoning |
 | [Project plan](docs/project-plan.md) | Phases, timeline, and task tracker |
+| [The corpus](corpus/README.md) | 11 vulnerable servers, 4 benign controls, and what each one is for |
+| [The lab](lab/README.md) | Bringing the sandboxed corpus online, and how egress is contained |
 
 ## Why this exists
 
@@ -106,8 +108,8 @@ an honest account of the dual-use tradeoff, is in [ethics.md](docs/ethics.md).
 | Phase | State |
 | --- | --- |
 | 0 — Scope and neutrality design | **Complete** |
-| 1 — Corpus | Next |
-| 2 — Runner and normalization | Not started |
+| 1 — Corpus | **Complete** |
+| 2 — Runner and normalization | Next |
 | 3 — Private disclosure round | Not started |
 | 4 — Public launch | Not started |
 

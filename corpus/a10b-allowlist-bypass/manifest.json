@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "server_id": "a10b-allowlist-bypass",
+  "kind": "vulnerable",
+  "transport": "http",
+  "entrypoint": "server.py",
+  "port": 8111,
+  "authenticated": true,
+  "summary": "A build-tool runner that executes project build commands restricted to an allowlist of permitted tools.",
+  "sensitive_tools": ["run_build"],
+  "declared": [
+    {
+      "class": "A10",
+      "variant": "b",
+      "surface": ["static"],
+      "location": {
+        "file": "server.py",
+        "symbol": "run_build",
+        "parameter": "command"
+      },
+      "proof_of_reach": "run_build(command=\"make ; echo MCPBENCH-MARKER-a10b\")",
+      "rationale": "A10b present-when: an allowlist exists but is escapable via shell metacharacters. run_build validates only the FIRST whitespace-token of 'command' against ALLOWED_COMMANDS, then passes the entire raw string to subprocess.run(..., shell=True). A command whose leading token is an approved tool (for example 'make') passes the check, but any ';', '&&', '|', or '$(...)' later in the string is interpreted by the shell, so further arbitrary commands run. The proof_of_reach string 'make ; echo MCPBENCH-MARKER-a10b' passes the allowlist on its leading 'make' token and then executes a harmless echo (minimal-payload principle, docs/ethics.md). This is variant b, not a: a genuine allowlist is present and rejects unlisted leading commands -- it is simply bypassable, which is exactly what distinguishes b from a."
+    }
+  ],
+  "tolerated": [],
+  "not_applicable": [],
+  "synthetic_credentials": []
+}
