@@ -183,3 +183,7 @@ class ScannerReport:
     high_variance: bool
     variance_detail: dict[str, float] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+    #: Set when the scanner could not be run at all. The row is still published
+    #: carrying this reason -- omitting it would silently turn "we could not run
+    #: this" into "this was not considered", which is not a neutral act.
+    unavailable_reason: str | None = None
