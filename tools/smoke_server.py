@@ -35,6 +35,19 @@ def _free(port: int) -> bool:
         return s.connect_ex(("127.0.0.1", port)) != 0
 
 
+def _ephemeral() -> int:
+    """Claim a free port from the OS and release it.
+
+    The smoke test launches its own process, so the registered lab port is
+    irrelevant here -- and binding it would make this tool unusable whenever the
+    lab is running, since Docker holds 8101-8204 then. Port-matches-registry is
+    validate_manifests.py's job, not this one's.
+    """
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
 def _wait(port: int, timeout: float = 25.0) -> bool:
     end = time.time() + timeout
     while time.time() < end:
@@ -55,13 +68,10 @@ async def _probe(url: str, token: str | None):
 def check(server_dir: Path) -> list[str]:
     name = server_dir.name
     manifest = json.loads((server_dir / "manifest.json").read_text())
-    port = manifest["port"]
+    port = _ephemeral()
     authed = manifest["authenticated"]
     url = f"http://127.0.0.1:{port}/mcp"
     problems: list[str] = []
-
-    if not _free(port):
-        return [f"{name}: port {port} already in use; cannot smoke test"]
 
     env = {**os.environ, "PORT": str(port), "MCPBENCH_TOKEN": TOKEN,
            "SINKHOLE_URL": "http://127.0.0.1:8900/collect",

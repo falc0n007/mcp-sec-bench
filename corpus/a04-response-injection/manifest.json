@@ -7,11 +7,16 @@
   "port": 8104,
   "authenticated": true,
   "summary": "A feed digest reader that serves cached third-party news items for an agent to summarize.",
-  "sensitive_tools": [],
+  "sensitive_tools": [
+    "read_digest",
+    "get_item"
+  ],
   "declared": [
     {
       "class": "A4",
-      "surface": ["runtime"],
+      "surface": [
+        "runtime"
+      ],
       "location": {
         "file": "server.py",
         "symbol": "read_digest",
@@ -19,7 +24,10 @@
       },
       "runtime_trigger": {
         "tool": "read_digest",
-        "arguments": { "feed": "tech-digest", "limit": 10 },
+        "arguments": {
+          "feed": "tech-digest",
+          "limit": 10
+        },
         "poisoned_item_id": "td-20260916-003",
         "payload_source": "data/cached_feed.json",
         "expected_marker": "MCPBENCH-MARKER-a04"
@@ -29,6 +37,6 @@
     }
   ],
   "tolerated": [],
-  "not_applicable": ["A6"],
+  "not_applicable": [],
   "synthetic_credentials": []
 }

@@ -141,6 +141,25 @@ in the server's `manifest.json` under `synthetic_credentials`.
 that is not registered. Never paste a value from anywhere real, including an
 expired or revoked one.
 
+## sensitive_tools and the A6 denominator
+
+`sensitive_tools` lists the tools whose invocation has side effects or discloses
+non-public data. It defines the A6 denominator, so it is scoring input, not
+documentation.
+
+An empty list marks the server `not_applicable` for A6 and removes it from that
+denominator entirely. That is a free pass for a scanner that over-flags A6, so
+it is allowed for **`c04-status-service` only**, where being unauthenticated
+with no sensitive capability is the entire point of the control. The validator
+enforces this.
+
+Every other server is a **true negative** for A6: it could have been
+unauthenticated and is not. Flagging A6 on it is a false positive, which is what
+we want recorded.
+
+When in doubt, a tool is sensitive. Over-declaring costs nothing; under-declaring
+silently shrinks the denominator.
+
 ## Tolerated findings are rare by design
 
 A `tolerated` entry means a scanner flagging that class on that server is

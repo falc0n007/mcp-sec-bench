@@ -60,6 +60,13 @@ ALLOWED_TOLERATED = {("c03-release-runner", "A7")}
 # Unauthenticated servers are deliberate and enumerated.
 ALLOWED_UNAUTH = {"a06-authless-endpoint", "c04-status-service"}
 
+# Servers permitted an empty sensitive_tools, and therefore permitted to sit
+# outside the A6 denominator. Everything else is a true negative for A6: it
+# could have been authless and is not. Excluding a server from the denominator
+# is a free pass for a scanner that over-flags A6, so the list is enumerated
+# rather than derived from whatever a manifest happens to declare.
+ALLOWED_NO_SENSITIVE = {"c04-status-service"}
+
 # Classes requiring a concrete proof-of-reach.
 NEEDS_PROOF = {"A5", "A8", "A10"}
 
@@ -182,6 +189,13 @@ def main() -> int:
             derived.add("A6")
         if not data["sensitive_tools"]:
             derived.add("A6")
+            if d.name not in ALLOWED_NO_SENSITIVE:
+                errors.append(
+                    f"{d.name}: empty sensitive_tools excludes it from the A6 "
+                    f"denominator, which is a free pass for a scanner that "
+                    f"over-flags A6. Only {sorted(ALLOWED_NO_SENSITIVE)} may do "
+                    f"that. An authenticated server with real tools is a true "
+                    f"negative for A6, not structurally incapable of it.")
         undeclared = derived - na
         if undeclared:
             errors.append(
