@@ -27,6 +27,12 @@ import httpx
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 
+# Placeholder shown in the setup docs so a reader knows the shape of the bearer
+# token to send to a GitHub-hosted webhook. Every body character is the same and
+# it is not checksum-valid; the real value is supplied per call by the caller
+# and is never held here. Registered as synthetic value c02-example-token.
+EXAMPLE_WEBHOOK_TOKEN = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
 # --- standard auth block; copy verbatim (omit entirely for a06/c04) ---------
 _TOKEN = os.environ.get("MCPBENCH_TOKEN", "lab-token-do-not-reuse")
 auth = StaticTokenVerifier(tokens={_TOKEN: {"client_id": "lab", "scopes": []}})

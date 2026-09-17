@@ -1,0 +1,1094 @@
+{
+  "schema_version": "2.0.0",
+  "tool_version": "2.0.0",
+  "target": "/corpus",
+  "target_commit": null,
+  "started_at": "2026-09-17T18:03:31.947805+00:00",
+  "finished_at": "2026-09-17T18:03:32.168712+00:00",
+  "server_info": {
+    "root": "/corpus",
+    "server_type": "unknown",
+    "is_mcp_server": false,
+    "name": null,
+    "version": null,
+    "entrypoint": null,
+    "launch_argv": null,
+    "launch_candidates": [],
+    "launch_python": null,
+    "build_argv": null,
+    "install_argv": null,
+    "transport": "stdio",
+    "manifest_files": [],
+    "lockfiles": [],
+    "dependencies": {},
+    "detection_notes": [
+      "no package.json, pyproject.toml, requirements.txt, go.mod or Dockerfile found; target does not look like an MCP server"
+    ]
+  },
+  "stages": [
+    {
+      "stage": "acquire",
+      "ran": true,
+      "reason": null,
+      "duration_s": 0.004,
+      "artifacts": {
+        "root": "/corpus"
+      }
+    },
+    {
+      "stage": "detect",
+      "ran": true,
+      "reason": null,
+      "duration_s": 0.013,
+      "artifacts": {
+        "server_type": "unknown",
+        "is_mcp_server": false,
+        "entrypoint": null,
+        "notes": [
+          "no package.json, pyproject.toml, requirements.txt, go.mod or Dockerfile found; target does not look like an MCP server"
+        ]
+      }
+    },
+    {
+      "stage": "static",
+      "ran": true,
+      "reason": null,
+      "duration_s": 0.204,
+      "artifacts": {
+        "findings": 8,
+        "parallel": "serial",
+        "files_analysed": 48,
+        "dockerfiles": 0,
+        "files_seen": 72,
+        "skipped_directories": [
+          ".cache",
+          ".git",
+          ".idea",
+          ".mcpguard-venv",
+          ".mypy_cache",
+          ".next",
+          ".nuxt",
+          ".pytest_cache",
+          ".tox",
+          ".turbo",
+          ".venv",
+          ".vscode",
+          "__pycache__",
+          "coverage",
+          "dist-info",
+          "htmlcov",
+          "node_modules",
+          "site-packages",
+          "vendor",
+          "venv"
+        ],
+        "skipped_generated_or_minified": 0,
+        "cache_hits": 0,
+        "cache_misses": 0
+      }
+    },
+    {
+      "stage": "dependencies",
+      "ran": false,
+      "reason": "offline mode: OSV lookup skipped",
+      "duration_s": 0.0,
+      "artifacts": {}
+    },
+    {
+      "stage": "dynamic",
+      "ran": false,
+      "reason": "requires --allow-execute",
+      "duration_s": 0.0,
+      "artifacts": {}
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "by_severity": {
+      "none": 0,
+      "low": 0,
+      "medium": 0,
+      "high": 6,
+      "critical": 2
+    },
+    "by_source": {
+      "static": 8,
+      "dynamic": 0,
+      "dependency": 0
+    }
+  },
+  "findings": [
+    {
+      "rule_id": "MCPG-PY-SHELL-TAINT",
+      "title": "Request-derived value reaches a shell/eval sink (Python): subprocess.run()",
+      "description": "Value derived from a parameter of line_count() reaches subprocess.run() without validation.",
+      "cwe": "CWE-78",
+      "cvss_vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+      "cvss_score": 9.4,
+      "severity": "critical",
+      "remediation": "Pass an argument vector, never shell=True with request data.",
+      "references": [],
+      "evidence": {
+        "file": "a10a-command-execution/server.py",
+        "line": 70,
+        "column": 14,
+        "matched_source": "result = subprocess.run(\n        f\"wc -l {target}\",\n        shell=True,\n        capture_output=True,\n        text=True,\n        timeout=10,\n    )",
+        "rule_id": "MCPG-PY-SHELL-TAINT",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:X/TO:X/LA:X/CX:0.0/ND:0.0/OP:0.0/PE:0.0/ID:0.0/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 9.4,
+        "score_high": 9.6,
+        "severity_low": "critical",
+        "severity_high": "critical",
+        "cvss_base": 9.4,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 3.0,
+        "aars_low": 0.0,
+        "aars_high": 0.1746,
+        "unobserved_factors": [
+          "autonomy",
+          "tools",
+          "language"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "unobserved",
+            "value": null,
+            "source": "whether a human co-signs actions is a deployment choice"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "unobserved",
+            "value": null,
+            "source": "the dynamic stage did not run, so tools/list was never read"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "unobserved",
+            "value": null,
+            "source": "depends on the client wired to the server, not the server"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-PY-SHELL-TAINT",
+      "title": "Request-derived value reaches a shell/eval sink (Python): subprocess.run()",
+      "description": "Value derived from a parameter of run_build() reaches subprocess.run() without validation.",
+      "cwe": "CWE-78",
+      "cvss_vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+      "cvss_score": 9.4,
+      "severity": "critical",
+      "remediation": "Pass an argument vector, never shell=True with request data.",
+      "references": [],
+      "evidence": {
+        "file": "a10b-allowlist-bypass/server.py",
+        "line": 79,
+        "column": 14,
+        "matched_source": "result = subprocess.run(\n        command,\n        shell=True,\n        capture_output=True,\n        text=True,\n        timeout=15,\n    )",
+        "rule_id": "MCPG-PY-SHELL-TAINT",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:X/TO:X/LA:X/CX:0.0/ND:0.0/OP:0.0/PE:0.0/ID:0.0/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 9.4,
+        "score_high": 9.6,
+        "severity_low": "critical",
+        "severity_high": "critical",
+        "cvss_base": 9.4,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 3.0,
+        "aars_low": 0.0,
+        "aars_high": 0.1746,
+        "unobserved_factors": [
+          "autonomy",
+          "tools",
+          "language"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "unobserved",
+            "value": null,
+            "source": "whether a human co-signs actions is a deployment choice"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "unobserved",
+            "value": null,
+            "source": "the dynamic stage did not run, so tools/list was never read"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "unobserved",
+            "value": null,
+            "source": "depends on the client wired to the server, not the server"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-SECRET-HARDCODED",
+      "title": "Hardcoded credential (AWS access key id)",
+      "description": "AWS access key id. The value is embedded in source and is present in every copy of this repository and its history.",
+      "cwe": "CWE-798",
+      "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+      "cvss_score": 8.8,
+      "severity": "high",
+      "remediation": "Move the secret to an environment variable and rotate it.",
+      "references": [],
+      "evidence": {
+        "file": "a07-hardcoded-secrets/server.py",
+        "line": 34,
+        "column": 22,
+        "matched_source": "AWS_ACCESS_KEY_ID = \"AKIAQR7WYO35JFXUD3HM\"",
+        "rule_id": "MCPG-SECRET-HARDCODED",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:0.0/TO:0.0/LA:0.0/CX:0.0/ND:0.0/OP:0.0/PE:X/ID:X/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 8.8,
+        "score_high": 9.0,
+        "severity_low": "high",
+        "severity_high": "critical",
+        "cvss_base": 8.8,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 2.0,
+        "aars_low": 0.0,
+        "aars_high": 0.2328,
+        "unobserved_factors": [
+          "persistence",
+          "identity"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "unobserved",
+            "value": null,
+            "source": "memory across sessions is a deployment property"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "unobserved",
+            "value": null,
+            "source": "runtime role assumption is configured by the operator"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-SECRET-HARDCODED",
+      "title": "Hardcoded credential (assignment to 'AWS_SECRET_ACCESS_KEY' with entropy 4.95 >= 3.2)",
+      "description": "assignment to 'AWS_SECRET_ACCESS_KEY' with entropy 4.95 >= 3.2. The value is embedded in source and is present in every copy of this repository and its history.",
+      "cwe": "CWE-798",
+      "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+      "cvss_score": 8.8,
+      "severity": "high",
+      "remediation": "Move the secret to an environment variable and rotate it.",
+      "references": [],
+      "evidence": {
+        "file": "a07-hardcoded-secrets/server.py",
+        "line": 35,
+        "column": 1,
+        "matched_source": "AWS_SECRET_ACCESS_KEY = \"X+W1UKCKm4HtcMCXn504OTNClzTbaJGpd6DnPR2A\"",
+        "rule_id": "MCPG-SECRET-HARDCODED",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:0.0/TO:0.0/LA:0.0/CX:0.0/ND:0.0/OP:0.0/PE:X/ID:X/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 8.8,
+        "score_high": 9.0,
+        "severity_low": "high",
+        "severity_high": "critical",
+        "cvss_base": 8.8,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 2.0,
+        "aars_low": 0.0,
+        "aars_high": 0.2328,
+        "unobserved_factors": [
+          "persistence",
+          "identity"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "unobserved",
+            "value": null,
+            "source": "memory across sessions is a deployment property"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "unobserved",
+            "value": null,
+            "source": "runtime role assumption is configured by the operator"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-SECRET-HARDCODED",
+      "title": "Hardcoded credential (GitHub token)",
+      "description": "GitHub token. The value is embedded in source and is present in every copy of this repository and its history.",
+      "cwe": "CWE-798",
+      "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+      "cvss_score": 8.8,
+      "severity": "high",
+      "remediation": "Move the secret to an environment variable and rotate it.",
+      "references": [],
+      "evidence": {
+        "file": "a07-hardcoded-secrets/server.py",
+        "line": 36,
+        "column": 17,
+        "matched_source": "GITHUB_TOKEN = \"ghp_99Hg8BR4MWRuunZ4N8n6qf0z91nW464AS5ek\"",
+        "rule_id": "MCPG-SECRET-HARDCODED",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:0.0/TO:0.0/LA:0.0/CX:0.0/ND:0.0/OP:0.0/PE:X/ID:X/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 8.8,
+        "score_high": 9.0,
+        "severity_low": "high",
+        "severity_high": "critical",
+        "cvss_base": 8.8,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 2.0,
+        "aars_low": 0.0,
+        "aars_high": 0.2328,
+        "unobserved_factors": [
+          "persistence",
+          "identity"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "unobserved",
+            "value": null,
+            "source": "memory across sessions is a deployment property"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "unobserved",
+            "value": null,
+            "source": "runtime role assumption is configured by the operator"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-SECRET-HARDCODED",
+      "title": "Hardcoded credential (GitHub token)",
+      "description": "GitHub token. The value is embedded in source and is present in every copy of this repository and its history.",
+      "cwe": "CWE-798",
+      "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+      "cvss_score": 8.8,
+      "severity": "high",
+      "remediation": "Move the secret to an environment variable and rotate it.",
+      "references": [],
+      "evidence": {
+        "file": "c03-release-runner/server.py",
+        "line": 59,
+        "column": 25,
+        "matched_source": "EXAMPLE_GITHUB_TOKEN = \"ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"",
+        "rule_id": "MCPG-SECRET-HARDCODED",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:0.0/TO:0.0/LA:0.0/CX:0.0/ND:0.0/OP:0.0/PE:X/ID:X/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 8.8,
+        "score_high": 9.0,
+        "severity_low": "high",
+        "severity_high": "critical",
+        "cvss_base": 8.8,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 2.0,
+        "aars_low": 0.0,
+        "aars_high": 0.2328,
+        "unobserved_factors": [
+          "persistence",
+          "identity"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "unobserved",
+            "value": null,
+            "source": "memory across sessions is a deployment property"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "unobserved",
+            "value": null,
+            "source": "runtime role assumption is configured by the operator"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-PY-PATH-TAINT",
+      "title": "Request-derived value reaches a filesystem sink (Python): open()",
+      "description": "Value derived from a parameter of read_attachment() reaches open() without validation.",
+      "cwe": "CWE-22",
+      "cvss_vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:L/VA:N/SC:L/SI:N/SA:N",
+      "cvss_score": 7.0,
+      "severity": "high",
+      "remediation": "Resolve and containment-check the path before opening it.",
+      "references": [],
+      "evidence": {
+        "file": "a08-unrestricted-file-read/server.py",
+        "line": 85,
+        "column": 14,
+        "matched_source": "with open(target, \"r\", encoding=\"utf-8\", errors=\"replace\") as handle:",
+        "rule_id": "MCPG-PY-PATH-TAINT",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:X/TO:X/LA:0.0/CX:0.0/ND:0.0/OP:0.0/PE:X/ID:0.0/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 7.0,
+        "score_high": 7.9,
+        "severity_low": "high",
+        "severity_high": "high",
+        "cvss_base": 7.0,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 3.0,
+        "aars_low": 0.0,
+        "aars_high": 0.873,
+        "unobserved_factors": [
+          "autonomy",
+          "tools",
+          "persistence"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "unobserved",
+            "value": null,
+            "source": "whether a human co-signs actions is a deployment choice"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "unobserved",
+            "value": null,
+            "source": "the dynamic stage did not run, so tools/list was never read"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "unobserved",
+            "value": null,
+            "source": "memory across sessions is a deployment property"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    },
+    {
+      "rule_id": "MCPG-PY-PATH-TAINT",
+      "title": "Request-derived value reaches a filesystem sink (Python): open()",
+      "description": "Value derived from a parameter of read_note() reaches open() without validation.",
+      "cwe": "CWE-22",
+      "cvss_vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:L/VA:N/SC:L/SI:N/SA:N",
+      "cvss_score": 7.0,
+      "severity": "high",
+      "remediation": "Resolve and containment-check the path before opening it.",
+      "references": [],
+      "evidence": {
+        "file": "c01-notes-workspace/server.py",
+        "line": 149,
+        "column": 10,
+        "matched_source": "with open(target, \"r\", encoding=\"utf-8\") as handle:",
+        "rule_id": "MCPG-PY-PATH-TAINT",
+        "kind": "static"
+      },
+      "aivss": {
+        "spec": "OWASP AIVSS v0.8",
+        "spec_title": "AIVSS Scoring System For OWASP Agentic AI Core Security Risks",
+        "spec_url": "https://aivss.owasp.org/",
+        "vector": "AIVSS:0.8/AU:X/TO:X/LA:0.0/CX:0.0/ND:0.0/OP:0.0/PE:X/ID:0.0/MA:0.0/SM:0.0",
+        "complete": false,
+        "partial": true,
+        "score": null,
+        "score_low": 7.0,
+        "score_high": 7.9,
+        "severity_low": "high",
+        "severity_high": "high",
+        "cvss_base": 7.0,
+        "threat_multiplier": {
+          "key": "poc",
+          "value": 0.97
+        },
+        "mitigation_factor": {
+          "key": "none",
+          "value": 1.0
+        },
+        "factor_sum_low": 0.0,
+        "factor_sum_high": 3.0,
+        "aars_low": 0.0,
+        "aars_high": 0.873,
+        "unobserved_factors": [
+          "autonomy",
+          "tools",
+          "persistence"
+        ],
+        "factors": [
+          {
+            "factor": "autonomy",
+            "name": "Execution Autonomy",
+            "status": "unobserved",
+            "value": null,
+            "source": "whether a human co-signs actions is a deployment choice"
+          },
+          {
+            "factor": "tools",
+            "name": "External Tool Control Surface",
+            "status": "unobserved",
+            "value": null,
+            "source": "the dynamic stage did not run, so tools/list was never read"
+          },
+          {
+            "factor": "language",
+            "name": "Natural Language Interface",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "context",
+            "name": "Contextual Awareness",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "non_determinism",
+            "name": "Behavioral Non-Determinism",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "opacity",
+            "name": "Opacity and Reflexivity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "persistence",
+            "name": "Persistent State Retention",
+            "status": "unobserved",
+            "value": null,
+            "source": "memory across sessions is a deployment property"
+          },
+          {
+            "factor": "identity",
+            "name": "Dynamic Identity",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "multi_agent",
+            "name": "Multi-Agent Interactions",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          },
+          {
+            "factor": "self_mod",
+            "name": "Self-Modification",
+            "status": "not-applicable",
+            "value": 0.0,
+            "source": "not applicable to this finding class"
+          }
+        ]
+      }
+    }
+  ]
+}

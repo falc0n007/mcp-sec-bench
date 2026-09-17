@@ -33,35 +33,38 @@ caller-controlled execution."** Both fire here. A10 requires caller-controlled
 input to *reach* the execution sink; proving it does not requires following
 where `label` actually goes, which is into a dict and nowhere else.
 
-**Control for A7 (hardcoded secrets), mirroring `a07-hardcoded-secrets`.** Two
-credential-shaped literals sit at module scope, and they are different cases on
-purpose.
-
-- `EXAMPLE_GITHUB_TOKEN = "ghp_xxxx..."`. A documented placeholder. The
-  taxonomy names this exact shape as not A7: "`API_KEY = "<your-key-here>"` --
-  a placeholder. Not A7, and a benign control should contain one." It is not
-  checksum-valid, every body character is the same, and the surrounding comment
-  and the `setup_example` docstring both say it is an example. *The naive
-  heuristic it catches:* **"a literal matching a known token prefix is a
-  hardcoded secret."** A prefix-matching detector fires on `ghp_`; a detector
-  that validates GitHub's base62 CRC32 checksum, or that notices the body has
-  one distinct character, does not. A scanner flagging this is simply wrong,
-  and it is not tolerated.
+**Control for A7 (hardcoded secrets), mirroring `a07-hardcoded-secrets`.** One
+credential-shaped literal sits at module scope.
 
 - `ARTIFACT_SHA256 = "6fb11e9a..."`. Sixty-four characters of high-entropy hex.
-  This one is genuinely ambiguous and is the corpus's **only** tolerated
-  finding. It is a content digest -- it authenticates a file, not a caller, and
-  there is no system it would open -- but no entropy-based detector can tell a
-  SHA-256 digest from a hex API key by inspection, and neither can a reviewer
-  without the surrounding context. A scanner reporting A7 for it is neither
-  right nor wrong, so it is scored as `tolerated` and costs nothing in
-  precision. Per `corpus/conventions.md` this is the single tolerated entry
-  authorised for v1, and `tools/validate_manifests.py` enforces that no other
-  server may add one.
+  It is genuinely ambiguous and is the corpus's **only** tolerated finding. It
+  is a content digest -- it authenticates a file, not a caller, and there is no
+  system it would open -- but no entropy-based detector can tell a SHA-256
+  digest from a hex API key by inspection, and neither can a reviewer without
+  the surrounding context. A scanner reporting A7 for it is neither right nor
+  wrong, so it is scored as `tolerated` and costs nothing in precision. Per
+  `corpus/conventions.md` this is the single tolerated entry authorised for v1,
+  and `tools/validate_manifests.py` enforces that no other server may add one.
 
-Both values are minted by `tools/synthetic_credentials.py`, registered there,
-and listed in this server's `synthetic_credentials`. Neither has ever been
-issued by anything.
+**Why the placeholder case is not here.** A documented placeholder such as
+`ghp_xxxx...` is the other half of the A7 control, and the taxonomy is explicit
+that flagging one is wrong rather than ambiguous. It deliberately lives on
+[`c02-webhook-notifier`](../c02-webhook-notifier/) instead of beside the digest.
+
+Tolerance is evaluated per `(server, class)`, not per literal. A placeholder
+sharing this server would therefore be *excused by the digest's tolerance* --
+any A7 finding here scores `tolerated` regardless of which literal triggered
+it. A scanner that fires on the obviously-fake placeholder and never notices
+the ambiguous digest would score identically to one that reasons correctly
+about both, and the more valuable of the two controls would be silently
+unscoreable. Separating them is what makes each one measurable.
+
+This was found by running a real scanner: it flagged the placeholder, missed
+the digest, and was credited `tolerated` anyway.
+
+The value is minted by `tools/synthetic_credentials.py`, registered there, and
+listed in this server's `synthetic_credentials`. It has never been issued by
+anything.
 
 ## How to reach it
 

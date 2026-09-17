@@ -7,12 +7,14 @@
   "port": 8203,
   "authenticated": true,
   "summary": "A release helper that reports the published build's metadata and runs the project's fixed post-deploy smoke check.",
-  "sensitive_tools": ["run_smoke_check"],
+  "sensitive_tools": [
+    "run_smoke_check"
+  ],
   "declared": [],
   "tolerated": [
     {
       "class": "A7",
-      "rationale": "ARTIFACT_SHA256 in server.py is a 64-character high-entropy hex literal. It is a build-artifact content digest, not a credential: it authenticates a file rather than a caller and opens no system. But an entropy-based detector cannot distinguish a SHA-256 digest from a hex API key by inspection, and neither can a careful human reviewer without the surrounding context. A scanner reporting A7 here is making a defensible call on a genuinely ambiguous literal, so it is scored as neither a true nor a false positive. This tolerance covers the digest only. EXAMPLE_GITHUB_TOKEN is not ambiguous: it is visibly a placeholder, is not checksum-valid, and docs/taxonomy.md names a placeholder as explicitly not A7."
+      "rationale": "ARTIFACT_SHA256 in server.py is a 64-character high-entropy hex literal. It is a build-artifact content digest, not a credential: it authenticates a file rather than a caller and opens no system. But an entropy-based detector cannot distinguish a SHA-256 digest from a hex API key by inspection, and neither can a careful human reviewer without the surrounding context. A scanner reporting A7 here is making a defensible call on a genuinely ambiguous literal, so it is scored as neither a true nor a false positive. This tolerance covers the digest, which is the only credential-shaped literal on this server. The not-ambiguous placeholder case lives on c02-webhook-notifier instead, deliberately: tolerance is evaluated per (server, class), so a placeholder sharing a server with a tolerated digest would be excused by it rather than scored as the false positive it is."
     }
   ],
   "not_applicable": [],
@@ -20,12 +22,6 @@
     {
       "value_id": "c03-artifact-digest",
       "kind": "sha256_hex",
-      "file": "server.py",
-      "intentional": true
-    },
-    {
-      "value_id": "c03-example-token",
-      "kind": "documented_example",
       "file": "server.py",
       "intentional": true
     }

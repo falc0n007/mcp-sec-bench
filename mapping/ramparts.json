@@ -1,0 +1,769 @@
+{
+  "schema_version": "1.0",
+  "scanner_id": "ramparts",
+  "display_name": "Ramparts",
+  "scanner_versions": [
+    "0.8.8"
+  ],
+  "adapter_version": "1.0.0",
+  "label_provenance": "captured-from-real-output",
+  "provenance_note": "Every raw_label below is a real, verbatim YARA rule identifier read directly from rules/pre/*.yar at git tag v0.8.8 of github.com/highflame-ai/ramparts -- the exact 40 rules baked into runner/adapters/dockerfiles/ramparts.Dockerfile and confirmed (via `grep -h '^rule ' /opt/ramparts-rules/pre/*.yar` inside the built image, and via the ramparts-reported 'Pre-scan completed: 15 rules executed' summary) to be the exact rule set compiled into the scanner binary this adapter runs. This project ran `ramparts scan` against all 15 corpus servers with rules verifiably loaded (see the adapter build report) and observed ZERO of these 40 rules fire on any server -- so no raw_label here has actually been seen appearing in a finding our own run produced. We still use 'captured-from-real-output' rather than 'unverified' because, unlike an LLM-derived label vocabulary read from docs, a YARA rule's identifier is a fixed string burned into the exact binary we run -- there is no version drift, paraphrase, or documentation lag between 'the string we read from the rule file' and 'the string ramparts would emit as yara_results[].rule_name should the rule ever match'. We verified this equivalence directly rather than trusting vendor docs. See notes[] below for why the corpus-wide zero-finding result does not mean these entries are untested guesses.",
+  "label_source_field": "yara_results[].rule_name",
+  "frozen_for_corpus_version": null,
+  "matching": {
+    "case_insensitive": false,
+    "strip_surrounding_whitespace": false
+  },
+  "notes": [
+    "Ramparts, as this adapter invokes it (`ramparts scan <url>` against a live MCP endpoint), never reads the server's source code and never calls a tool -- verified against ramparts 0.8.8's src/scanner.rs, which has no call_tool/tools-call code path at all. Its YARA pre-scan runs exclusively against the descriptor TEXT returned by tools/list, prompts/list and resources/list (name, description, JSON schema) -- see scan_items_with_yara/format_item_for_yara_scan. Every mapping below accounts for that: a rule whose vendor description talks about 'file access' or 'environment variables' is, in our configuration, a regex match over descriptor prose, not a verified data-flow claim about the server's implementation. That is exactly why this run found zero matches on all 15 corpus servers even on a08/a09/a10a/a10b, whose flaws live in implementation code no descriptor text mentions -- a real, structural miss, not a mapping defect.",
+    "TRAP 1 (docs/scanner-survey.md): `cargo install ramparts` does not vendor rules/pre/*.yar; without them the pre-scan YARA engine is silently disabled and every one of these 40 labels becomes permanently unreachable while still reporting a clean-looking zero-finding scan. This adapter's runtime guard (_verify_rules_loaded in runner/adapters/ramparts.py) refuses to return findings, returning AdapterResult.error instead, whenever it cannot prove a positive rule count was compiled -- so a mapping-layer consumer of this table can trust that any run that reached the mapping stage at all had rules genuinely loaded.",
+    "This table intentionally maps NINE distinct vendor rules (PromptInjectionSignature, IndirectPromptInjection, CoerciveInjection, CapabilityInflation, AutonomyAbuse, CovertExfiltration, SkillSystemManipulation, SkillToolChainingExfiltration, UnicodeSteganography) onto the single class A1. That convergence is a real, disclosable signal about our taxonomy's granularity, not a mapping shortcut: ramparts ships fine-grained distinctions (coercion vs role-redefinition vs capability-inflation vs autonomy-bypass vs concealment) that our v1 taxonomy's single broad A1 class does not carry, because A1 was written to cover 'any agent-directed manipulative metadata content' as one class. If a future scanner comparison finds this convergence obscures a real difference in what these tools catch, that is an argument for splitting A1 in a future taxonomy version, per docs/mapping-rationale.md section 1: 'a label that does not fit is evidence about our ten classes, not a deficiency in the scanner.'",
+    "`security_issues.tool_issues[]` / `prompt_issues[]` / `resource_issues[]` (ramparts' LLM-analyzer output, keyed by `issue_type`) is parsed defensively by the adapter but is NOT covered by this table: this adapter never configures an LLM provider (see docs/scanner-survey.md's Ramparts section on the LLM stage's silent skip), so these arrays are empty in every run behind this table and no `issue_type` value has ever been observed. Should a future run configure an LLM key and this stage produce output, those raw_labels will show up as ungapped gaps in MappingReport.gap_report() and need their own entries before they can be scored."
+  ],
+  "entries": [
+    {
+      "raw_label": "PromptInjectionSignature",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-001",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'classic instruction-override / role-redefinition / privilege-escalation patterns that override or coerce the agent's behavior (the ignore previous instructions family)'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently",
+        "why_satisfied": "The rule's own patterns ($instruction_override_strong, $do_not_obey, $role_redefinition, $hidden_behavior) match exactly this family of text -- 'ignore all previous instructions', 'do not mention this to the user', 'new instructions: you are now X' -- and per the scan-mechanism note this text can only have come from a tool/prompt/resource descriptor field, never from source or a tool call."
+      },
+      "rationale": "Clean R1 match. The rule's condition (read from ramparts 0.8.8's rules/pre/skill_prompt_injection.yar) fires on instruction-override, role-redefinition and concealment phrasing -- precisely A1's four disjuncts -- and, because this adapter only ever gives ramparts a live URL, the matched text is necessarily a descriptor field returned by the MCP handshake. No other class's present-when test is satisfied by what this rule reports.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "IndirectPromptInjection",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-002",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'Detects skills/prompts that delegate instruction-following to untrusted external content (webpages, fetched documents, file contents)'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently",
+        "why_satisfied": "The rule's patterns ($follow_external, $obey_untrusted, $trust_url_content, etc.) match phrases like 'follow the instructions in the webpage' or 'do whatever the document says'. That phrase is itself an instruction to the agent, and per the scan-mechanism note it can only be sitting in a tool/prompt/resource descriptor field ramparts fetched over the live connection -- never in a tool's return value, which ramparts never reads."
+      },
+      "considered_classes": [
+        {
+          "class": "A4",
+          "why_rejected": "The name suggests A4 (payload arrives via return-value/indirect data), and this is the pairing this project's own task brief flagged as worth checking against the present-when tests. But A4 requires 'a tool call with manifest-specified arguments returns content that would qualify as an instruction' -- an OBSERVED return value. Ramparts 0.8.8 has no call_tool code path at all (verified in src/scanner.rs): it never invokes a tool and therefore never sees a return value in any configuration this adapter runs. Whatever text this rule matches came from tools/list, prompts/list or resources/list descriptor fields, which is A1's channel, not A4's. 'Indirect' in the rule's own name and description refers to the INSTRUCTION'S content (delegate trust to an external file/webpage the agent has not yet fetched), not to the CHANNEL ramparts read the instruction from."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R6"
+      ],
+      "rationale": "This is the pair the build brief specifically asked to check rather than accept by name alone, and checking it changes the answer. 'IndirectPromptInjection' sounds like A4 (payload in returned data) against 'PromptInjectionSignature' sounding like A1 (payload in metadata), but ramparts' actual mechanism -- confirmed by reading src/scanner.rs, which contains no tool-invocation code at all -- means both labels can only ever fire on descriptor text fetched via tools/list, prompts/list or resources/list. 'Indirect' describes what the matched instruction tells the agent to do (trust some other, not-yet-fetched document), not where ramparts found the instruction. We map both to A1 for that reason, and record this as the highest-dispute-risk entry in the table: a vendor could reasonably argue the label's intent targets a genuine indirect-injection scenario our runtime-only deployment happens not to exercise, and if ramparts is ever also run source-scanning a data file that IS the A4 fixture, this entry would need revisiting under R3's stage split. Per R6 we prefer this visible, arguable error to inventing a content heuristic.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "CoerciveInjection",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-003",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'mandatory-execution language and priority-override directives in prompts/skills (e.g. always invoke this first, tool will not work unless...)'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, ... or specifies conditions under which the agent should act differently",
+        "why_satisfied": "$mandatory_execution, $priority_overrides and $required_precedence match phrasing that asserts this tool's priority over every other tool/action ('before executing any other tool', 'must use this tool first') -- A1's second disjunct verbatim."
+      },
+      "considered_classes": [
+        {
+          "class": "A3",
+          "why_rejected": "A3 requires the descriptor to reference a tool or server OTHER than itself by name and say something about how that other tool should be selected or trusted. Every pattern in this rule ($priority_overrides, $tool_poisoning) asserts generic priority ('before any other tool') without naming a specific other tool or server, so A3's cross-reference test is not met -- it is a generic self-promotion claim, which is A1's territory."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R2"
+      ],
+      "rationale": "Settled by A3's own disclaimer: a claim of priority over unnamed 'other tools' in general is A1; only a claim that names and makes an assertion about a SPECIFIC other tool or server is A3. This rule's patterns never require naming another tool, so R2 places it at A1 without residual ambiguity.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "CapabilityInflation",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-004",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'manipulation of skill discovery: keyword stuffing, coercive always-use-me-first priority, deceptive certification claims, hidden activation triggers'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, ... or specifies conditions under which the agent should act differently",
+        "why_satisfied": "$activation_priority ('use this first/before others', 'priority over all tools') and $overbroad_claims ('always use this instead') are agent-directed priority assertions living in descriptor text -- the same property A1 tests for."
+      },
+      "considered_classes": [
+        {
+          "class": "A3",
+          "why_rejected": "As with CoerciveInjection, every pattern here is a generic self-promotion claim with no reference to a specific other tool or server by name, so A3's cross-reference requirement is not met."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R2"
+      ],
+      "rationale": "Most of this rule's signal (keyword stuffing, deceptive certification claims like 'certified by Anthropic', hidden activation triggers) is about discovery-ranking manipulation rather than direct behavioural override, which is a slightly broader read of A1 than PromptInjectionSignature's classic case. But the taxonomy's own framing of A1 -- 'attempts to induce agent behaviour the user did not request' -- covers manipulating which tool the agent picks, not only what the agent does once it picks one. We map it here rather than leaving it unmapped because the rule's own condition requires agent-directed priority or trust language, satisfying A1's first two disjuncts; a reader who thinks 'discovery manipulation' deserves its own class rather than sharing A1 has a fair point worth raising as a taxonomy amendment.",
+      "dispute_risk": "medium"
+    },
+    {
+      "raw_label": "AutonomyAbuse",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-005",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'skill/prompt instructions that bypass user control (skip-confirmation, override-user, infinite retry, self-modify, privilege escalation)'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, ... or specifies conditions under which the agent should act differently",
+        "why_satisfied": "$skip_confirmation ('proceed without asking the user'), $override_user ('ignore user input') and $infinite_retry are all instructions to the agent, embedded in descriptor text, directing it to act in ways the user did not request or approve -- A1's core test."
+      },
+      "considered_classes": [
+        {
+          "class": "A1",
+          "why_rejected": "n/a -- listed to record that we considered leaving this unmapped as 'excessive agency', a concept our ten classes do not name directly, before concluding A1's broad wording already covers it; see rationale."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R4"
+      ],
+      "rationale": "The closest call in this table to a taxonomy gap. 'Excessive agency' / autonomy-bypass is a distinct, well-known category in other frameworks (it is its own OWASP LLM06 line item, and sentinel-scan-cli in docs/scanner-survey.md ships missing_hitl_confirmation and overbroad_tool_scope as separate heuristics), and our ten classes have no dedicated slot for it. We map to A1 rather than leaving it unmapped because A1's definition is written broadly ('attempts to induce agent behaviour the user did not request'), which is exactly what 'don't ask the user for confirmation' does, and because the channel is identical to every other entry in this cluster: agent-directed text in a descriptor field. A reader is entitled to disagree that A1 was meant to reach this far, and if enough scanners ship a dedicated excessive-agency check this is the entry to point at when proposing a new class.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "CovertExfiltration",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-006",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'an embedded instruction to send data offsite or into an output field while concealing it from the user'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently",
+        "why_satisfied": "The rule's own condition requires concealment language ($conceal_silently, $conceal_without, $conceal_dont_mention -- 'silently send', 'without telling the user', 'do not mention this') paired with data-movement language. 'Directs concealment from the user' is A1's third disjunct, quoted verbatim, and the concealment clause is mandatory in this rule's condition, not incidental."
+      },
+      "considered_classes": [
+        {
+          "class": "A5",
+          "why_rejected": "This is the label the build brief specifically flagged to check against the present-when tests, and the check overturns the name's suggestion. A5 requires 'invoking the tool causes an egress attempt ... carrying argument-derived content' -- an OBSERVED event from actually calling the tool. Ramparts 0.8.8 never calls a tool (no call_tool path exists in src/scanner.rs); this rule matches INSTRUCTION TEXT in a descriptor field that, if an agent obeyed it, would cause exfiltration. That is a claim about metadata content, which is A1's domain, not an observed runtime egress attempt, which is A5's."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R6"
+      ],
+      "rationale": "Named 'exfiltration' and tagged category 'exfiltration' in the rule's own metadata, so a name-based mapping to A5 is the obvious first guess -- and it is the wrong one once the present-when tests are actually checked, which is exactly what the build brief asked us to verify for this label. A5 is a behavioural class: it requires ramparts to have observed an actual egress attempt caused by invoking a tool. Ramparts never invokes tools in any configuration this adapter runs (confirmed by reading src/scanner.rs). What this rule detects is textual: concealment language plus exfiltration language sitting in a descriptor field, which an agent might act on if it trusted the tool blindly. That is precisely A1's third disjunct ('directs concealment from the user'), quoted from taxonomy.md word for word by this rule's own condition structure. We therefore map to A1, not A5, and flag this the second-highest dispute risk in the table (after IndirectPromptInjection) because 'exfiltration' in the name will read to most people as an obvious A5 match; the taxonomy's own text is the tie-breaker cited above, per R6's preference for a visible, arguable error over a name-based guess.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "SkillSystemManipulation",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-007",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'skill instructions that destroy data (dd zero, wipefs, shred), recursively delete system paths, change ownership/permissions of root paths, hijack PATH, or escalate privileges'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, ... or specifies conditions under which the agent should act differently",
+        "why_satisfied": "The rule matches destructive INSTRUCTION TEXT ('run dd if=/dev/zero ...', 'recursively delete /etc') embedded in a skill/prompt descriptor, which is an instruction to the agent to perform an action the user did not request -- A1's first disjunct."
+      },
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10 requires 'caller-controlled input reaches process execution' in the SERVER'S implementation -- a verified reachable sink. This rule matches descriptor TEXT instructing an agent to run destructive commands; it says nothing about the server's own code reaching an exec call, and ramparts never examines the server's implementation in this adapter's configuration. The property reported is 'the descriptor tells the agent to do something destructive', not 'the server executes caller input', so A10's test is not met."
+        },
+        {
+          "class": "A1",
+          "why_rejected": "n/a -- recorded to show we also considered leaving this outside-taxonomy-scope as generic destructive-instruction content unrelated to MCP specifically, and rejected that because the channel (a descriptor field returned by tools/list) is exactly A1's MCP-specific surface regardless of what the instruction's payload asks for."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R2",
+        "R4"
+      ],
+      "rationale": "The content here (rm -rf, wipefs, chown of root paths) is more dramatic than the classic prompt-injection phrasing PromptInjectionSignature targets, which might tempt a reader to look for a more specific class. There isn't one: A10 needs a verified execution sink in the server's own code, which this text-pattern rule cannot establish and which ramparts cannot see in this configuration anyway (it never reads source). The MCP-specific property that IS present is the channel: this is agent-directed instruction content delivered through a tool/prompt/resource descriptor field, which is exactly A1's definition regardless of how destructive the instructed action is. We map here rather than to 'outside-taxonomy-scope' because the delivery channel, not the payload's severity, is what A1 tests for.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "SkillToolChainingExfiltration",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-008",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'skill bodies that exfiltrate data by chaining file/credential read + network send (Discord/Telegram/pastebin webhooks, attacker-controlled hosts, ngrok/requestbin tunnels)'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, ... or specifies conditions under which the agent should act differently",
+        "why_satisfied": "Like CovertExfiltration, this rule matches INSTRUCTION TEXT describing a read-then-send chain, not an observed egress event -- 'issues an instruction to the agent' is the disjunct satisfied, and per the scan-mechanism note the matched text is necessarily a descriptor field."
+      },
+      "considered_classes": [
+        {
+          "class": "A5",
+          "why_rejected": "Same reasoning as MR-ramparts-006 (CovertExfiltration): A5 requires an OBSERVED egress attempt from actually invoking a tool. Ramparts never invokes tools in this configuration, so this rule can only ever be matching instruction text describing a chain, not a chain it watched happen."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R6"
+      ],
+      "rationale": "Consistent with CovertExfiltration (MR-ramparts-006): the name and category tags say 'exfiltration', but the mechanism is textual instruction-matching over descriptor content, never an observed runtime egress attempt, so A5's behavioural test cannot be satisfied by what this rule reports in any configuration this adapter runs. Mapped to A1 for the same reason and carrying the same dispute risk.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "UnicodeSteganography",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-009",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'hidden Unicode characters used for invisible prompt injection (zero-width chars, directional overrides, Tags block characters)'.",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, ...",
+        "why_satisfied": "The vendor's own description names this 'invisible prompt injection' -- it is a detector for the ENCODING technique (zero-width/hidden Unicode) used to smuggle an A1-shaped payload past a human reviewer reading the visible text, not a separate kind of payload."
+      },
+      "rationale": "This rule does not detect a new property; it detects an obfuscation technique applied to the same instruction-bearing content PromptInjectionSignature targets in the clear. Ramparts' own scanner.rs runs every rule against 'additional_scan_views' (decoded/normalized variants) precisely so a hidden-Unicode-encoded instruction and a plaintext one are treated as the same finding class. We map both to A1 for consistency; the vendor's own naming ('invisible prompt injection') makes this the least contestable entry in the cluster.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "SecretsLeakage",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-010",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'potential exposure of sensitive information like API keys, passwords, and tokens'.",
+      "mapped_class": "A7",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest marks a literal as a planted secret and the value is syntactically a credential of a recognisable type -- not a placeholder, not a variable reference, not a documented example value",
+        "why_satisfied": "Every firing pattern is a literal-value match: $api_key requires 'API_KEY = <20+ char value>', $aws_key matches the AKIA... format, $github_token matches ghp_..., $private_key matches a PEM header. These are exactly 'credential-shaped literals of a recognisable type', A7's own phrasing."
+      },
+      "considered_classes": [
+        {
+          "class": "A9",
+          "why_rejected": "A9's disclaimer draws the origin line explicitly: A7 is the secret literal itself, A9 is the channel that leaks secrets from the environment. Nothing in this rule's condition tests for environment access (os.environ, process.env, getenv) -- every pattern is a literal VALUE assignment -- so it sits on A7's side of that line."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R2"
+      ],
+      "rationale": "Definitionally a clean A7 match: every sub-pattern requires an actual credential-shaped literal value, not a reference or a channel. The caveat is entirely about reach, not correctness of the mapping: per the scan-mechanism note, this rule can only fire in our configuration if a literal secret-shaped string happens to appear in a tool/prompt/resource descriptor's TEXT, which a well-formed server's descriptions should never contain -- consistent with the zero findings this run recorded on a07 (whose secret lives in server.py, never in any descriptor field ramparts can see).",
+      "dispute_risk": "medium"
+    },
+    {
+      "raw_label": "SkillCredentialHarvesting",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-011",
+      "confidence": "low",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'literal vendor API token formats, PEM private-key blocks, and active credential-theft verbs (steal/grab/exfiltrate <credential>) in skill bodies'.",
+      "mapped_class": "A7",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest marks a literal as a planted secret and the value is syntactically a credential of a recognisable type",
+        "why_satisfied": "Half of this rule's own description is 'literal vendor API token formats, PEM private-key blocks' -- the same credential-literal property SecretsLeakage tests for."
+      },
+      "considered_classes": [
+        {
+          "class": "A1",
+          "why_rejected": "The rule's OTHER half ('active credential-theft verbs: steal/grab/exfiltrate <credential>') is instruction-shaped, closer to CovertExfiltration/A1 than to a literal-value test. The label does not distinguish which half fired. We map to A7 as the more specific, less contestable half rather than leaving unmapped, and record the gap here per R6 rather than hide it inside a heuristic."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R4",
+        "R6"
+      ],
+      "rationale": "A genuine two-headed rule: one condition arm is a literal-credential-format test (A7-shaped, like SecretsLeakage), the other is theft-instruction language (A1-shaped, like CovertExfiltration). raw_label alone cannot tell us which arm fired, and mapping-rationale.md forbids reading the finding's free-text message to disambiguate. We pick A7 because it is the narrower, more specific reading, and flag this as the lowest-confidence mapped entry in the table: a firing that is really the theft-verb half would be scored a near miss on A7 and a genuine, undisclosed hit on A1 elsewhere. If this rule fires in a real run, the finding's `matched_text` (recorded in raw_output even though not used for mapping) should be inspected by hand before trusting the A7 credit.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "SSHKeyExposure",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-012",
+      "confidence": "low",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'SSH keys, authorized_keys files, and SSH configuration access'.",
+      "mapped_class": "A7",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest marks a literal as a planted secret and the value is syntactically a credential of a recognisable type",
+        "why_satisfied": "The rule's key-header patterns ($ssh_rsa_key = '-----BEGIN RSA PRIVATE KEY-----', etc.) and public-key patterns ($ssh_rsa_pub = 'ssh-rsa <base64>') match literal credential material verbatim."
+      },
+      "considered_classes": [
+        {
+          "class": "A7",
+          "why_rejected": "n/a -- recorded to flag that several of this rule's OTHER patterns ($ssh_dir, $authorized_keys, $id_rsa, $known_hosts) are bare FILENAME/PATH mentions, not credential literals -- 'id_rsa' appearing in prose is not a secret value. A finding from one of those sub-patterns would not actually satisfy A7's test, but the raw_label cannot distinguish which pattern fired."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R6"
+      ],
+      "rationale": "Like SkillCredentialHarvesting, this rule bundles a clean literal-credential test (PEM/SSH private key headers, public key blobs) with a much weaker filename/path-mention test (the string 'id_rsa' or '.ssh/' appearing anywhere). Only the first half cleanly satisfies A7. We map to A7 anyway per R6 -- an unmapped verdict would lose real credit for the clean half, and a firing on the weak half is a visible, disclosable near-miss rather than a hidden one -- but this is a lower-confidence entry than SecretsLeakage precisely because of that bundling.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "PEMFileAccess",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-013",
+      "confidence": "low",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'access to PEM certificate files and private keys'.",
+      "mapped_class": "A7",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest marks a literal as a planted secret and the value is syntactically a credential of a recognisable type",
+        "why_satisfied": "The PEM header patterns ($pem_private_key = '-----BEGIN PRIVATE KEY-----', etc.) match literal private-key material verbatim, the clearest possible instance of a credential-shaped literal."
+      },
+      "considered_classes": [
+        {
+          "class": "A7",
+          "why_rejected": "n/a -- as with SSHKeyExposure, this rule ALSO fires on bare mentions of certificate-related words ($ssl_cert, $tls_cert, generic '.pem'/'.crt' file-extension mentions) that are not literal secret values. Same bundling caveat applies."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R6"
+      ],
+      "rationale": "Same reasoning and same caveat as SSHKeyExposure (MR-ramparts-012): a clean literal-key-material sub-pattern bundled with much weaker filename/keyword mentions under one label. Mapped to A7 for the clean half, flagged low confidence for the same reason.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "EnvironmentVariableLeakage",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-014",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description (v1.1): 'exposure of sensitive environment variables (named service keys with quoted high-entropy values; bare process.env access alone is not a finding)'.",
+      "mapped_class": "A9",
+      "taxonomy_evidence": {
+        "present_when_quote": "a tool returns environment values selected by caller input, or returns the environment block wholesale",
+        "why_satisfied": "The rule's dominant framing, per its own name and description, is exposure of environment-sourced values; its $theft_language-plus-$env_access arm specifically requires environment-access syntax (process.env./os.environ/getenv) co-occurring with active extraction language, which is squarely about the environment as the leak's origin."
+      },
+      "considered_classes": [
+        {
+          "class": "A7",
+          "why_rejected": "A9's own disclaimer draws this line on ORIGIN: A7 is a secret literal in code, A9 is the channel that leaks the environment. This rule's $named_assignment_with_value arm (a literal high-entropy value assigned to a credential-shaped NAME) leans toward A7's side of that line, while its $env_access-plus-$theft_language arm leans toward A9's. The rule's own name and primary description commit to 'environment variable' as the framing, so we place it on A9's side, but this is genuinely a split rule and a vendor could argue the $named_assignment_with_value arm alone should be A7."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R2"
+      ],
+      "rationale": "This is our version of the worked A7/A9 dispute in mapping/example-scanner.json (MR-example-scanner-007): the rule's condition genuinely has both an A7-shaped arm (literal value assigned to a credential-shaped name) and an A9-shaped arm (environment-access syntax plus theft language). We follow the vendor's own naming and primary description -- 'Environment Variable Leakage', framed around the environment as origin -- and place it at A9. Per the scan-mechanism note, in our configuration this can only fire on descriptor TEXT that happens to contain these patterns, which is why it did not fire on a09 (whose actual environment-return behaviour lives in server.py, invisible to a metadata-only scan).",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "CommandInjection",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-015",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'Comprehensive command injection detection covering multiple attack vectors and evasion techniques'.",
+      "mapped_class": "A10",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest records a caller-reachable execution sink and, for A10b, a concrete bypass string that escapes the intended command set",
+        "why_satisfied": "The rule's own category tags ('command-injection', 'code-execution', 'privilege-escalation') and its purpose (detecting shell metacharacter / command-chaining patterns) target exactly A10's sink: caller-controlled input reaching process execution."
+      },
+      "rationale": "Clean definitional match to A10 -- the rule exists specifically to catch shell/command-injection shapes, which is what A10 defines. As with the other code-pattern rules in this table, the caveat is reach rather than correctness: per the scan-mechanism note, ramparts never examines the corpus servers' implementation code in this adapter's configuration, so this rule can only fire on descriptor text that happens to contain shell-metacharacter-shaped substrings, which explains (rather than contradicts) the zero findings observed on a10a/a10b.",
+      "dispute_risk": "medium"
+    },
+    {
+      "raw_label": "PathTraversalVulnerability",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "rationale_id": "MR-ramparts-016",
+      "confidence": "medium",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'potential path traversal patterns and unsafe file access'.",
+      "mapped_class": "A8",
+      "taxonomy_evidence": {
+        "present_when_quote": "a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable by traversal, absolute path, or symlink",
+        "why_satisfied": "The rule's patterns ('../', '/etc/', 'file_get_contents|readFile|fopen|open(') target exactly the traversal-and-unsafe-read shape A8 defines."
+      },
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A8's own disclaimer: if the read happens via a subprocess, it is A10, not A8. This rule's patterns are about direct file-open calls (open/fopen/readFile), not process execution, so A8 rather than A10 is the right side of that line."
+        }
+      ],
+      "resolution_rules": [
+        "R1",
+        "R2"
+      ],
+      "rationale": "Definitionally the cleanest of the code-pattern rules -- A8's own worked example in mapping/example-scanner.json (MR-example-scanner-001) is this exact class of finding. The caveat, stated plainly because this is the label the build brief named as 'worth checking': A8's present-when test is a DATA-FLOW claim (a caller-supplied value reaches a read with no containment), and this YARA rule is a bare substring/regex match with no data-flow analysis behind it even when ramparts is given source code, let alone descriptor text. In our configuration (metadata-only, no source access) it can only fire if a tool description happens to literally contain a traversal-shaped substring. That mechanism gap is exactly why a08's real flaw -- an unchecked `open()` call in server.py -- produced zero findings from this scanner in our verification run, and it is a structural miss (the adapter cannot reach the flaw's location), not evidence against this mapping.",
+      "dispute_risk": "high"
+    },
+    {
+      "raw_label": "SQLInjection",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-017",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'Comprehensive SQL injection detection covering multiple attack vectors and evasion techniques'; this is the taxonomy's own literal example of an out-of-scope generic app-sec finding.",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Vendor description: 'Comprehensive SQL injection detection covering multiple attack vectors and evasion techniques'; this is the taxonomy's own literal example of an out-of-scope generic app-sec finding. taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface' and gives SQL injection as its own worked example of the boundary; the same reasoning applies here. Per docs/mapping-rationale.md section 7, unmapped costs the scanner nothing on precision -- it is a statement about our taxonomy's scope, not a deficiency in this rule. Named verbatim in taxonomy.md's Scope boundary section as the example of what is deliberately excluded: 'A SQL injection reachable only through a tool argument is a real bug but is not an MCP attack class.'",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "CrossOriginEscalation",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-018",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'multiple domains/origins in MCP tool configurations that could lead to cross-origin escalation attacks' -- detects several different URLs/domains appearing together in tool config text.",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Vendor description: 'multiple domains/origins in MCP tool configurations that could lead to cross-origin escalation attacks' -- detects several different URLs/domains appearing together in tool config text. taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface' and gives SQL injection as its own worked example of the boundary; the same reasoning applies here. Per docs/mapping-rationale.md section 7, unmapped costs the scanner nothing on precision -- it is a statement about our taxonomy's scope, not a deficiency in this rule. No class in taxonomy.md addresses multi-origin/mixed-domain confusion in a tool's declared endpoints; it is neither a metadata-injection class (A1/A3), nor an observed egress event (A5), nor a credential/file/env/exec class (A7-A10). A genuine, real check with no present-when test in our v1 taxonomy to place it against.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "MCPConfigRisk",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-019",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description: 'STDIO server uses risky shell/interpreter with inline code or pipe to shell' -- a property of how an MCP CLIENT would LAUNCH a stdio server, not of a tool the server exposes.",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Vendor description: 'STDIO server uses risky shell/interpreter with inline code or pipe to shell' -- a property of how an MCP CLIENT would LAUNCH a stdio server, not of a tool the server exposes. taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface' and gives SQL injection as its own worked example of the boundary; the same reasoning applies here. Per docs/mapping-rationale.md section 7, unmapped costs the scanner nothing on precision -- it is a statement about our taxonomy's scope, not a deficiency in this rule. Every server in this corpus runs over HTTP (docs/../corpus/conventions.md: 'Every server runs over HTTP'), so this rule targets a launch-configuration shape our corpus does not use at all, in addition to describing a client-side launch risk rather than a server-side flaw our ten classes are scoped to.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "NetworkReconnaissance",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-020",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description (hacktools.yar): 'Network reconnaissance and scanning patterns', category 'hack-tool' -- a generic offensive-tooling signature (nmap/masscan-style command references), not an MCP-specific class.",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Vendor description (hacktools.yar): 'Network reconnaissance and scanning patterns', category 'hack-tool' -- a generic offensive-tooling signature (nmap/masscan-style command references), not an MCP-specific class. taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface' and gives SQL injection as its own worked example of the boundary; the same reasoning applies here. Per docs/mapping-rationale.md section 7, unmapped costs the scanner nothing on precision -- it is a statement about our taxonomy's scope, not a deficiency in this rule.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "BackdoorPersistence",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-021",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Vendor description (malware.yar): 'Backdoor persistence with malicious payloads (shell commands, SSH key injection, hidden root users)', category 'malware'. Malware/persistence detection is explicitly out of scope per the build brief -- these rules exist to catch a compromised or malicious server implementation wholesale, not one of our ten specific attack classes.",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Vendor description (malware.yar): 'Backdoor persistence with malicious payloads (shell commands, SSH key injection, hidden root users)', category 'malware'. Malware/persistence detection is explicitly out of scope per the build brief -- these rules exist to catch a compromised or malicious server implementation wholesale, not one of our ten specific attack classes. taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface' and gives SQL injection as its own worked example of the boundary; the same reasoning applies here. Per docs/mapping-rationale.md section 7, unmapped costs the scanner nothing on precision -- it is a statement about our taxonomy's scope, not a deficiency in this rule.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "ASPXWebshell",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-022",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: ASP.NET webshell signature (rules/pre/webshells.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (ASP.NET webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "C2FrameworkIndicators",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-023",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: command-and-control framework signature (rules/pre/malware.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (command-and-control framework signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "CryptoCoinjacking",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-024",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: browser/server cryptojacking signature (rules/pre/cryptominers.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (browser/server cryptojacking signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "CryptoMinerSoftware",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-025",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: cryptomining software signature (rules/pre/cryptominers.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (cryptomining software signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "CryptoMiningPools",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-026",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: cryptomining pool connection signature (rules/pre/cryptominers.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (cryptomining pool connection signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "CryptoStratumProtocol",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-027",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: Stratum mining-protocol signature (rules/pre/cryptominers.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (Stratum mining-protocol signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "ExploitFramework",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-028",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: exploit-framework (e.g. Metasploit-shaped) signature (rules/pre/hacktools.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (exploit-framework (e.g. Metasploit-shaped) signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "InfoStealer",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-029",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: credential/info-stealer malware signature (rules/pre/malware.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (credential/info-stealer malware signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "JSPWebshell",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-030",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: JSP webshell signature (rules/pre/webshells.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (JSP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "KeyloggerIndicators",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-031",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: keylogger signature (rules/pre/malware.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (keylogger signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "OffensiveToolReferences",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-032",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: offensive-security tooling reference signature (rules/pre/hacktools.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (offensive-security tooling reference signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "PHPWebshellGeneric",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-033",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: generic PHP webshell signature (rules/pre/webshells.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (generic PHP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "PHPWebshellKnown",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-034",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: known-family PHP webshell signature (rules/pre/webshells.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (known-family PHP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "PHPWebshellObfuscated",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-035",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: obfuscated PHP webshell signature (rules/pre/webshells.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (obfuscated PHP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "PhishingKit",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-036",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: phishing-kit signature (rules/pre/malware.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (phishing-kit signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "PrivilegeEscalationTools",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-037",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: local privilege-escalation tooling signature (rules/pre/hacktools.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (local privilege-escalation tooling signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "PythonWebshell",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-038",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: Python webshell signature (rules/pre/webshells.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (Python webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "RansomwareBehavior",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-039",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: ransomware behaviour signature (rules/pre/malware.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (ransomware behaviour signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    },
+    {
+      "raw_label": "ReverseShell",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "rationale_id": "MR-ramparts-040",
+      "confidence": "high",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (ramparts adapter build)",
+      "label_note": "Malware/webshell family rule: reverse-shell payload signature (rules/pre/malware.yar).",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale": "Malware/webshell/offensive-tooling signature (reverse-shell payload signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. Unmapped costs the scanner nothing on precision; it is a scope statement, not a deficiency.",
+      "dispute_risk": "low"
+    }
+  ]
+}

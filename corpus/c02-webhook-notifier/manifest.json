@@ -7,9 +7,18 @@
   "port": 8202,
   "authenticated": true,
   "summary": "A notifier that posts a short message to a webhook endpoint the caller supplies on every call.",
-  "sensitive_tools": ["send_notification"],
+  "sensitive_tools": [
+    "send_notification"
+  ],
   "declared": [],
   "tolerated": [],
   "not_applicable": [],
-  "synthetic_credentials": []
+  "synthetic_credentials": [
+    {
+      "value_id": "c02-example-token",
+      "kind": "documented_example",
+      "file": "server.py",
+      "intentional": true
+    }
+  ]
 }

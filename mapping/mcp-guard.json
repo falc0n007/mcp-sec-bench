@@ -1,0 +1,544 @@
+{
+  "schema_version": "1.0",
+  "scanner_id": "mcp-guard",
+  "display_name": "mcp-guard (SaravanaGuhan/mcp-guard)",
+  "scanner_versions": ["2.0.0"],
+  "adapter_version": "1.0.0",
+  "label_provenance": "captured-from-real-output",
+  "provenance_note": "Three labels -- MCPG-SECRET-HARDCODED, MCPG-PY-PATH-TAINT, MCPG-PY-SHELL-TAINT -- were copied verbatim from output this project produced and committed at tests/fixtures/mcp-guard-corpus-scan.json (whole-corpus scan, corpus v1-0f9650d5044b, image mcp-sec-bench/mcp-guard:2.0.0 built from commit e782de38d98219047c4dab3232395d8636c678c3). The remaining twenty were read out of the same pinned build's rule registry (`python -c 'from mcp_guard import rules; rules.all_rules()'` inside that image), which is the code that emits the string, not vendor prose about it -- so the SPELLING of every label here is verified against the shipped binary. Labels we have not yet seen fire on this corpus carry status `provisional`, which is what distinguishes a verified spelling from a verified behaviour.",
+  "label_source_field": "findings[].rule_id",
+  "frozen_for_corpus_version": "v1-0f9650d5044b",
+  "matching": {
+    "case_insensitive": false,
+    "strip_surrounding_whitespace": false,
+    "note": "Byte-exact, the default. mcp-guard's rule ids come from a frozen dataclass registry keyed by id, so the string cannot drift between runs of one build; nothing here justifies loosening the match."
+  },
+  "notes": [
+    "Covers all 23 rule ids registered by mcp-guard 2.0.0. 9 map, 14 are unmapped with a stated reason. Per docs/scoring.md an unmapped finding is neither a true nor a false positive, so the 14 cost this scanner nothing; they are a claim about the reach of OUR taxonomy, not about the tool.",
+    "Only 3 of the 23 have been observed firing on this corpus. Two structural reasons, both worth knowing before reading the scoreboard row. (1) The adapter declares stages={\"static\"}, because mcp-guard's dynamic stage launches the target over stdio and every corpus server speaks HTTP; the 7 MCPG-DYN-* labels therefore cannot fire in this configuration. (2) The 6 MCPG-DOCKER-* labels need a Dockerfile inside the scanned tree, and the corpus servers deliberately ship no per-server build files.",
+    "A third reason is specific to the MCP-aware rules and is easy to misread as a detection failure of a different shape: in mcp-guard 2.0.0 the module implementing MCPG-MCP-* is primarily a JavaScript analyser. For Python targets it runs a reduced line-oriented check (`analyze_py_text`) that attempts MCPG-MCP-PROMPT-INJECTION-SURFACE and MCPG-MCP-URI-CONCAT only, and explicitly does not attempt MCPG-MCP-SCHEMA-UNDECLARED-ARGS because Python SDK schemas are derived from type hints. Every corpus server is Python. This is recorded here, not used: it changes nothing about how a label is mapped (R5), and mapping decisions must not be tuned to what we expect to fire.",
+    "Three of our ten classes have no mcp-guard label that satisfies their present-when test at all: A2 (rug-pull), A3 (cross-server shadowing), A9 (unrestricted env access). The tool ships no rule about descriptor mutation, no rule that reasons across servers, and no rule about a tool returning process environment to its caller. Those items are false negatives, not mapping gaps, and are not repaired here.",
+    "Read docs/mapping-rationale.md for the R1-R6 decision procedure the rationale text cites."
+  ],
+  "entries": [
+    {
+      "raw_label": "MCPG-SECRET-HARDCODED",
+      "label_note": "Vendor's own registry text: title \"Hardcoded credential\", CWE-798, method \"regex+entropy\", rationale \"Structural match (known prefix or secret-ish assignment) AND high entropy.\" The finding title names the credential type it believes it found, e.g. \"Hardcoded credential (AWS access key id)\".",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A7",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest marks a literal as a planted secret and the value is syntactically a credential of a recognisable type - not a placeholder, not a variable reference, not a documented example value",
+        "why_satisfied": "The rule fires on a bare string literal assigned in source and requires both a structural credential signature (a known vendor prefix, or a secret-ish assignment target) and high Shannon entropy. That is precisely the second half of the test: a value syntactically a credential of a recognisable type, sitting in source rather than being read from the environment. The first half -- that the manifest marks it -- is ground truth and is not something any label can satisfy; it is what the scorer checks the mapped finding against."
+      },
+      "considered_classes": [
+        {
+          "class": "A9",
+          "why_rejected": "A9's own Not-this-class clause draws the line at the secret's origin: A7 is the secret in the code, A9 is a channel that leaks secrets from the environment. This rule reports a literal in source and asserts nothing about a tool returning environment contents, so the A9 test is not satisfied."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-001",
+      "rationale": "The clean case: the rule and the class name the same property, a credential-shaped literal in source. The objection worth answering is over-fire rather than mis-class. taxonomy.md excludes placeholders from A7 by name, and this rule does not: its entropy floor is 3.2 bits, and on corpus v1 it fired on c03-release-runner's EXAMPLE_GITHUB_TOKEN = \"ghp_xxxxxxxx...\", a value that is visibly a placeholder and not checksum-valid, which c03's manifest says in terms is NOT the finding it tolerates. We do not narrow the mapping to fix that. The label still reports the A7 property; what is wrong is the rule's judgment about one value, and a mapping table that reached in to correct a scanner's judgment would be scoring our reading instead of its detection (R5). The consequence is disclosed on the row rather than absorbed here: on c03 this produces a TOLERATED outcome for a literal the manifest explicitly declines to tolerate, which flatters the tool by one item. Recorded under R6 -- an error a reader can find and dispute.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-PY-PATH-TAINT",
+      "label_note": "Vendor's own registry text: title \"Request-derived value reaches a filesystem sink (Python)\", CWE-22, method \"ast\", rationale \"Intraprocedural taint from a handler parameter to open()/pathlib.\"",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A8",
+      "taxonomy_evidence": {
+        "present_when_quote": "a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable by traversal, absolute path, or symlink",
+        "why_satisfied": "The rule reports intraprocedural taint from a tool handler's parameter -- a caller-supplied value -- into open() or a pathlib read. That is the first clause of the test verbatim, and the rule's finding text asserts the second clause too ('reaches open() without validation')."
+      },
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A8's Not-this-class clause settles it: 'no process is executed. If the read happens via a subprocess, it is A10.' This rule's sink set is open()/pathlib, and mcp-guard registers a separate rule id, MCPG-PY-SHELL-TAINT, for the subprocess sink. No process is executed, so the more specific class is A8."
+        },
+        {
+          "class": "A9",
+          "why_rejected": "A8's second disclaimer: 'the filesystem is not the environment block'. The rule's sinks are filesystem calls and it asserts nothing about os.environ."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-002",
+      "rationale": "High confidence on the class, and the interesting fact about this rule is not the mapping but what it is blind to. The rule is a reachability analysis, not a containment analysis: it reports that a parameter reaches a read sink, and it has no notion of whether a resolve-and-prefix-check stands between them. On corpus v1 it fires identically on a08-unrestricted-file-read (no containment) and on c01-notes-workspace (which resolves and containment-checks against a workspace root before opening), producing one true positive and one true false positive from the same rule. taxonomy.md calls c01 'the single most valuable control in the corpus ... separates scanners that analyse containment from scanners that pattern-match on open('. That separation is exactly what the precision column is for, and it is measured here rather than argued away. We decline the alternative of mapping this label narrowly enough to exclude the control: the label reports the A8 property either way, and a mapping tuned to what the corpus contains is R5's prohibition in its clearest form.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-JS-PATH-TAINT",
+      "label_note": "Vendor's own registry text: title \"Non-literal path to a filesystem call (JS/TS)\", CWE-22, method \"ast\", rationale \"fs.* called with a non-literal path expression.\"",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A8",
+      "taxonomy_evidence": {
+        "present_when_quote": "a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable by traversal, absolute path, or symlink",
+        "why_satisfied": "The rule reports a filesystem call whose path argument is a non-literal expression in a tool handler, with no resolve-and-verify step. That is a value the caller can influence reaching a read operation with no containment check -- the test's second disjunct."
+      },
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A8 disclaims the subprocess route and mcp-guard registers MCPG-JS-SHELL-TAINT separately for child_process sinks. This rule's sinks are fs.* calls; no process is executed."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-003",
+      "rationale": "The JavaScript twin of MR-mcp-guard-002, and weaker in one respect that we state rather than smooth over: where the Python rule performs intraprocedural taint from a handler parameter, this one fires on any non-literal path expression, which is a broader and less caller-anchored trigger. We map it to A8 anyway. 'Caller-supplied' in the present-when test is a property of the flaw, and a scanner is entitled to approximate it; whether the approximation is a good one is a precision question the scoreboard answers with numbers, not a mapping question. It has not fired on this corpus -- every corpus server is Python -- so the entry is provisional and no published number currently depends on it.",
+      "confidence": "medium",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-PY-SHELL-TAINT",
+      "label_note": "Vendor's own registry text: title \"Request-derived value reaches a shell/eval sink (Python)\", CWE-78, method \"ast\", rationale \"Intraprocedural taint from a handler parameter to subprocess/eval/exec.\"",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A10",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest records a caller-reachable execution sink and, for A10b, a concrete bypass string that escapes the intended command set",
+        "why_satisfied": "The rule reports taint from a tool handler's parameter into subprocess/eval/exec, which is a caller-reachable execution sink. A10's Credit clause is explicit that credit is at class level 'whether or not it articulates the bypass', so this one entry covers both the A10a and A10b corpus servers and nothing turns on the rule's silence about the allowlist."
+      },
+      "considered_classes": [
+        {
+          "class": "A8",
+          "why_rejected": "A8 disclaims it in one line: 'no process is executed. If the read happens via a subprocess, it is A10.' The distinguishing feature -- a process is executed -- is present, so the more specific class wins."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-004",
+      "rationale": "The strongest entry in the table: the rule fired on a10a-command-execution and a10b-allowlist-bypass, on the exact subprocess.run(shell=True) lines the manifests declare, and on nothing else. One asymmetry to record, because a reader comparing entries will notice it. This single rule id covers three sinks -- subprocess, eval and exec -- and we map it to A10 on the strength of the subprocess half, while leaving MCPG-JS-VM-EVAL (the eval sink alone, in JavaScript) unmapped at MR-mcp-guard-006. If this rule ever fires on a Python target whose only sink is eval(), it will be credited A10 through a coarse label whose narrow equivalent we declined to map. We accept that under R6: the alternative is a content heuristic over the finding's prose to decide which sink fired, which no reviewer could check. The failure, if it happens, appears as a false positive on a named server rather than disappearing into a rule.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-JS-SHELL-TAINT",
+      "label_note": "Vendor's own registry text: title \"Non-literal argument to child_process exec/spawn (JS/TS)\", CWE-78, method \"ast\", rationale \"exec/execSync/spawn called with a non-literal command expression.\"",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A10",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest records a caller-reachable execution sink and, for A10b, a concrete bypass string that escapes the intended command set",
+        "why_satisfied": "child_process exec/execSync/spawn is process execution, and the rule fires only when the command expression is non-literal, i.e. computed from something the handler received. That is a caller-reachable execution sink."
+      },
+      "considered_classes": [
+        {
+          "class": "A8",
+          "why_rejected": "A8's disclaimer again: a process is executed, so the case belongs to A10 even where the executed command performs a read."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-005",
+      "rationale": "The JavaScript twin of MR-mcp-guard-004 and subject to the same caveat as MR-mcp-guard-003: 'non-literal' is a looser trigger than 'request-derived'. It still names an execution sink reached by a computed value, which is what A10 is about. Provisional: never observed firing, because the corpus is Python.",
+      "confidence": "medium",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-JS-VM-EVAL",
+      "label_note": "Vendor's own registry text: title \"Dynamic code evaluation (JS/TS)\", CWE-95, method \"ast\", rationale \"vm.runInNewContext / eval / new Function on a non-literal.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10's definition is 'Caller-controlled input reaches process execution', and A10a spells the sink out as 'a shell or exec call'. vm.runInNewContext, eval and new Function evaluate code inside the running process; they start no process and invoke no shell. Reading 'execution sink' widely enough to swallow in-process evaluation would make A10 a general code-execution class, which is not what taxonomy.md defines and not what the A10a/A10b corpus servers test."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-mcp-guard-006",
+      "rationale": "A real and serious finding that our ten classes do not define. Arbitrary in-process code evaluation reached from tool input is at least as dangerous as shelling out, and a reader who expects it under A10 is not being unreasonable -- which is exactly why this is recorded as a taxonomy gap instead of being quietly folded in. Under R1 we do not map what the present-when test does not cover, and under R4 we take the unmapped outcome, which costs mcp-guard nothing in precision or recall. It costs us something: if a second scanner also ships a dynamic-evaluation rule, that is two vendors telling us A10 is drawn too narrowly, and the answer is a taxonomy amendment under governance.md, not a quiet re-read of this entry. Note the asymmetry with MR-mcp-guard-004, argued there.",
+      "confidence": "medium",
+      "dispute_risk": "medium",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-MCP-PROMPT-INJECTION-SURFACE",
+      "label_note": "Vendor's own registry text: title \"Tool description carries model-directed instructions\", CWE-77, method \"ast\", rationale \"Tool descriptions are fed to the model verbatim; imperative text there is an injection surface into the agent's instruction channel.\"",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently",
+        "why_satisfied": "The rule reports model-directed imperative text located in a tool's description field, and the phrases it matches are drawn from the same set the test enumerates -- 'ignore previous instructions' (instruction to the agent), 'you must' / 'always call' (instruction and priority), 'never reveal' / 'do not tell' (concealment from the user). Field and content both line up with the A1 test."
+      },
+      "considered_classes": [
+        {
+          "class": "A3",
+          "why_rejected": "A1's Not-this-class clause: 'the payload targets agent behaviour generally. If it names or redefines another server's tool, it is A3.' Nothing in this label asserts a cross-server reference; its phrase list contains no construct that identifies another server or tool, so the A3 test is not satisfied by what the label reports."
+        },
+        {
+          "class": "A4",
+          "why_rejected": "A1's other clause: 'the payload is in metadata. If it is in a tool's return value, it is A4.' This rule reads tool declarations in source and reports a line in a description field. It never observes a return value."
+        },
+        {
+          "class": "A2",
+          "why_rejected": "A2 requires the descriptor to CHANGE between two points in the server's lifecycle. A single static observation of a description asserts no change, so the A2 test is not satisfied."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-007",
+      "rationale": "No stage split is needed here, which is worth saying because the coarse 'prompt injection' label that forces one (worked through in mapping/example-scanner.json) is the common shape in this category and this is not it. mcp-guard's rule is anchored to the description FIELD of a tool declaration, not to instruction-bearing text wherever it appears, so the A1/A4 ambiguity R3 exists to resolve never arises. The entry is provisional because the label has not fired on this corpus. It could have: a01-tool-description-injection carries its payload in a tool docstring, and the Python path of this rule requires the matched imperative and the word 'description' to fall on the SAME source line, while a01's payload spans two lines with the imperative ('takes priority over the user's request') on the line after the one saying DESCRIPTION. The phrase list also has no entry for 'takes priority over'. That is a genuine, publishable miss on a01 and it is scored as a false negative, not repaired here -- repairing a miss in the mapping layer is the failure this project exists to measure.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-MCP-URI-CONCAT",
+      "label_note": "Vendor's own registry text: title \"Resource URI handler concatenates instead of resolving\", CWE-22, method \"ast\", rationale \"URI/path built by string concatenation with no containment check.\"",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A8",
+      "taxonomy_evidence": {
+        "present_when_quote": "a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable by traversal, absolute path, or symlink",
+        "why_satisfied": "The rule fires on a resource handler that assembles a URI or path by concatenation with request-derived parts and suppresses itself when a resolve-and-verify construct (realpath, path.resolve, is_relative_to, commonpath, startsWith) is present. An MCP resource handler exists to return the content the URI names, so a caller-influenced path assembled with no containment check is a caller-supplied value reaching a read with no containment check."
+      },
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "No process is executed; the rule's subject is a path expression in a resource handler, and mcp-guard has separate rule ids for execution sinks."
+        }
+      ],
+      "resolution_rules": ["R1", "R2", "R6"],
+      "rationale_id": "MR-mcp-guard-008",
+      "rationale": "The weakest mapped entry here and marked accordingly. The objection to answer is that the rule matches an ASSIGNMENT, not a sink: it sees a path being built and the absence of a containment idiom on the same line, and never establishes that the result is opened. So it could in principle report a concatenated URI that is only ever logged, which satisfies no A8 test. We map it anyway, for two reasons. The rule's own title scopes it to a 'Resource URI handler', and reading the resource is the entire purpose of one; and a mapping that refused every label whose evidence is one step short of the sink would refuse most static rules in this category, including ones nobody disputes. Under R6 we prefer the visible error: if the rule fires where nothing is read, that shows up as a false positive on a named server in the published table and is contestable there, which is better than a discriminator over finding text that nobody can review. Provisional -- never observed on this corpus.",
+      "confidence": "medium",
+      "dispute_risk": "medium",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-MCP-SCHEMA-UNDECLARED-ARGS",
+      "label_note": "Vendor's own registry text: title \"Tool reads argument keys its inputSchema does not declare\", CWE-1286, method \"ast\", rationale \"Handler body indexes arguments not present in the declared schema.\" mcp-guard 2.0.0 does not attempt this rule on Python targets at all: schemas there are derived from type hints rather than written as literals.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "considered_classes": [
+        {
+          "class": "A2",
+          "why_rejected": "A2 needs a descriptor that CHANGES between two points in the server's lifecycle, and its 'advertises a capability the earlier version did not' clause is about that change. An undeclared argument is a permanent mismatch between one descriptor and one handler, present from the first tools/list. No change is asserted, so the A2 test is not satisfied."
+        },
+        {
+          "class": "A1",
+          "why_rejected": "A1 requires natural-language content in a descriptor field that addresses the consuming model. An undeclared argument key is a structural mismatch and carries no instruction to any agent."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-mcp-guard-009",
+      "rationale": "A descriptor-versus-implementation mismatch: the tool accepts more than it advertises. This is a genuinely interesting MCP-specific property -- it is close to what the literature calls capability inflation -- and our taxonomy has no class for it. A1 covers instruction-bearing metadata, A2 covers metadata that changes, A3 covers metadata that reaches across servers; none covers metadata that is merely incomplete. Unmapped under R4 rather than pushed into A2 on a strained reading of 'advertises a capability the earlier version did not'. Logged as a taxonomy gap: if a second vendor ships a comparable rule, that is the argument for an amendment.",
+      "confidence": "high",
+      "dispute_risk": "medium",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DEP-KNOWN-VULN",
+      "label_note": "Vendor's own registry text: title \"Dependency has a published advisory\", CWE-1395, method \"osv\", rationale \"Pinned version falls inside a published affected range.\" Disabled by the adapter's --offline flag, which is what makes the run credential-free and reproducible.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale_id": "MR-mcp-guard-010",
+      "rationale": "taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface', and a dependency sitting inside a published affected range is the textbook instance: the same finding would be reported about any Python project. Real and useful, and outside what this benchmark measures. Unmapped costs the scanner nothing (docs/scoring.md), and must never be reported as a penalty. Note the adapter runs with --offline, so this rule is not merely unmapped but not run -- its stage is recorded as 'offline mode: OSV lookup skipped' in the raw output we publish, so a reader can see it was disabled rather than silent.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DOCKER-ROOT",
+      "label_note": "Vendor's own registry text: title \"Container runs as root\", CWE-250, method \"ast\", rationale \"No USER directive, or an explicit USER root/0.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "not-mcp-specific",
+      "rationale_id": "MR-mcp-guard-011",
+      "rationale": "A container hardening finding about the image a server might ship in, not about the server's MCP surface. taxonomy.md's scope boundary covers flaws 'in an MCP server that a scanner examining that server could find', and excludes generic application security findings with no MCP-specific surface; a missing USER directive would read identically in a Dockerfile for a web app. Unmapped under R1: no class's present-when test is about process privilege. This entry and MR-mcp-guard-012 through 016 are the clearest evidence in this table that mcp-guard is a broader tool than this benchmark measures, which is a fact about our scope and not a deficiency in the tool.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DOCKER-LATEST-TAG",
+      "label_note": "Vendor's own registry text: title \"Base image pinned to a floating tag\", CWE-1104, method \"ast\", rationale \"FROM ...:latest or an untagged base is not reproducible.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "not-mcp-specific",
+      "rationale_id": "MR-mcp-guard-012",
+      "rationale": "A build reproducibility finding. No class in taxonomy.md has a present-when test about base image pinning, and nothing about the finding is particular to MCP. Unmapped under R1. (This project agrees with the rule on the merits -- runner/adapters/dockerfiles/mcp-guard.Dockerfile pins a commit SHA for exactly this reason -- which is beside the point: agreeing with a finding is not a reason to invent a class for it.)",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DOCKER-CHMOD777",
+      "label_note": "Vendor's own registry text: title \"World-writable permissions set in image\", CWE-732, method \"ast\", rationale \"chmod 777 / a+rwx in a RUN layer.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "not-mcp-specific",
+      "rationale_id": "MR-mcp-guard-013",
+      "rationale": "A filesystem permissions finding inside a build layer. A8 is the nearest class and does not fit: its test is about a caller-supplied value reaching a read operation at run time, not about the mode bits of files in an image. Unmapped under R1 rather than stretched into A8 on the shared word 'filesystem'.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DOCKER-ADD-REMOTE",
+      "label_note": "Vendor's own registry text: title \"ADD from a remote URL\", CWE-494, method \"ast\", rationale \"ADD with an http(s) source performs an unverified fetch.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "not-mcp-specific",
+      "rationale_id": "MR-mcp-guard-014",
+      "rationale": "Supply-chain integrity at build time: an unverified fetch into the image. No class's present-when test covers code provenance, and nothing about the finding is specific to MCP. Unmapped under R1.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DOCKER-CURL-PIPE-SH",
+      "label_note": "Vendor's own registry text: title \"Remote script piped to a shell during build\", CWE-494, method \"ast\", rationale \"curl/wget piped into sh/bash in a RUN layer.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "not-mcp-specific",
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10 requires CALLER-controlled input to reach execution: 'Caller-controlled input reaches process execution.' A curl-pipe-sh line in a RUN layer executes at image build time, from a command the image author wrote, with no MCP caller anywhere in the picture. The shared feature is a shell, which is not the feature A10 is about."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-mcp-guard-015",
+      "rationale": "Recorded with its considered class because 'a shell runs a fetched script' is the single most tempting mis-map in the DOCKER family, and a reviewer should be able to see it was considered and why it lost rather than trust that it was. A10 is about a caller reaching execution through a tool; this is a build step. Unmapped under R4.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DOCKER-ENV-SECRET",
+      "label_note": "Vendor's own registry text: title \"Secret baked into ENV/ARG\", CWE-798, method \"ast\", rationale \"Secret-ish key assigned a literal value in an image layer.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A7",
+          "why_rejected": "A7 is the closest fit in this whole table's unmapped half, and it still fails the test on its second half. The present-when test requires the value to be 'syntactically a credential of a recognisable type - not a placeholder, not a variable reference, not a documented example value.' This rule's own stated trigger is a secret-ish KEY NAME assigned any literal value; unlike MCPG-SECRET-HARDCODED it carries no credential-type signature and no entropy floor, so it fires just as readily on ENV API_KEY=changeme, which taxonomy.md names as explicitly not A7. A Dockerfile does qualify as 'committed configuration', so the location half of the test is satisfied -- the value half is not."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-mcp-guard-016",
+      "rationale": "The most arguable unmapped entry here, and we expect to be argued with, which is why the near-miss is written out rather than summarised as 'Docker, out of scope'. The reason is not the file type: if this rule required a credential-shaped value we would map it to A7 and a Dockerfile would be fine as the location. The reason is that what it reports -- a suspicious variable NAME with some literal after it -- does not satisfy the part of A7 that does the work, and mapping it would credit A7 on the strength of a key name. Left unmapped with reason insufficient-specificity, which is a statement about the label's evidence and costs the scanner nothing. If the vendor says the rule does apply an entropy or format filter that the registry rationale does not mention, that is a factual correction and this entry changes.",
+      "confidence": "medium",
+      "dispute_risk": "medium",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-CMDEXEC",
+      "label_note": "Vendor's own registry text: title \"Tool argument reaches a shell (proven by canary execution)\", CWE-78, method \"canary-probe\", rationale \"Canary uuid echoed back proves the shell actually ran the argument.\" Cannot fire in this benchmark's configuration: see the file notes.",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A10",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest records a caller-reachable execution sink and, for A10b, a concrete bypass string that escapes the intended command set",
+        "why_satisfied": "The probe sends a canary through a tool argument and sees it come back having been executed by a shell. That is a caller-reachable execution sink demonstrated rather than inferred, which is the strongest possible form of the A10 test."
+      },
+      "considered_classes": [
+        {
+          "class": "A8",
+          "why_rejected": "A8 disclaims the case where a process is executed. The canary proves a shell ran, so A10 is the specific class."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-017",
+      "rationale": "Mapped although it cannot currently fire. The entry exists so that the label is not silently dropped on the day the configuration changes -- an adapter that declares a stage it does not run, or a corpus revision adding a stdio server, would otherwise produce findings with no table row and a misleading `unmapped` count. Note this is a mapping, not a credit: the adapter declares stages={\"static\"}, so nothing about this entry affects the current scoreboard row. If a future runner does exercise mcp-guard's dynamic stage, no stage-scoped split is needed here, because this label has no static twin: mcp-guard uses distinct rule ids for its static and dynamic execution findings, which is a piece of vocabulary hygiene that makes this table considerably easier to review than a coarser tool's would be.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-PATHTRAVERSAL",
+      "label_note": "Vendor's own registry text: title \"Resource/tool path escapes the server root (proven by canary file)\", CWE-22, method \"canary-probe\", rationale \"Contents of a canary file written outside the target root came back.\" Cannot fire in this benchmark's configuration: see the file notes.",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A8",
+      "taxonomy_evidence": {
+        "present_when_quote": "a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable by traversal, absolute path, or symlink",
+        "why_satisfied": "The probe supplies a path, the server reads a file outside its root, and the contents come back. Both clauses are demonstrated: a caller-supplied value reached a read, and whatever containment exists was bypassable by traversal."
+      },
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "The probe proves a file was read, not that a process ran; mcp-guard reports the shell case under MCPG-DYN-CMDEXEC."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-mcp-guard-018",
+      "rationale": "The runtime counterpart of MR-mcp-guard-002, and strictly better evidence: it proves containment failed rather than inferring it from the absence of a check, which is the distinction c01-notes-workspace was built to expose. taxonomy.md gives A8 a static detection surface, but docs/scoring.md credits a correct find regardless of the stage that produced it, so nothing here depends on that. Mapped though it cannot fire in this configuration, for the reason argued at MR-mcp-guard-017.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-CRASH",
+      "label_note": "Vendor's own registry text: title \"Malformed request crashes the server\", CWE-248, method \"protocol-probe\", rationale \"Process exited while handling a malformed frame.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale_id": "MR-mcp-guard-019",
+      "rationale": "An availability finding. None of the ten classes has a present-when test about the server terminating; the taxonomy is about confidentiality and integrity flaws reachable through an MCP surface, and denial of service is simply not in it. Unmapped under R1, at no cost to the scanner.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-JSONRPC-VIOLATION",
+      "label_note": "Vendor's own registry text: title \"Response violates JSON-RPC 2.0\", CWE-20, method \"protocol-probe\", rationale \"Response carried neither result nor error, or echoed a bad id.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale_id": "MR-mcp-guard-020",
+      "rationale": "Protocol conformance, not a security class. A server that answers with neither result nor error is broken, and a client may handle it badly, but no present-when test in taxonomy.md is satisfied by the observation. Unmapped under R1.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-NO-DISPATCH",
+      "label_note": "Vendor's own registry text: title \"Server does not implement JSON-RPC method dispatch\", CWE-1286, method \"protocol-probe\", rationale \"A random, never-declared method name was answered successfully, so no method-existence check exists and every other probe is uninterpretable.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale_id": "MR-mcp-guard-021",
+      "rationale": "Protocol conformance again, and additionally a self-declared meta-finding: the rule's own rationale says its purpose is to tell the operator that every other dynamic probe on this target is uninterpretable. That is a statement about the scan, not about a flaw class, and no present-when test covers it. Unmapped under R1. Worth noting for a future runtime harness: a target that trips this rule should have its other MCPG-DYN-* findings read with suspicion, which is an execution concern rather than a mapping one.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-SCHEMA-UNENFORCED",
+      "label_note": "Vendor's own registry text: title \"Tool accepts arguments that violate its own inputSchema\", CWE-20, method \"protocol-probe\", rationale \"Server returned a success result for arguments its schema forbids.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "considered_classes": [
+        {
+          "class": "A6",
+          "why_rejected": "A6 is about AUTHENTICATION: 'a request carrying no credentials, sent to a tool in the server's manifest-declared sensitive set, returns a successful result rather than an authentication error.' This rule sends schema-violating arguments, not uncredentialed requests, and a server that enforces auth perfectly can still trip it. The shared surface -- a call that succeeded when it should have been refused -- is not the property A6 names."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-mcp-guard-022",
+      "rationale": "The runtime sibling of MR-mcp-guard-009 and unmapped for the same reason: our taxonomy has no class for a descriptor that does not bind its implementation. Recorded with its considered class because 'the server accepted a request it should have rejected' looks superficially like A6 and a reviewer is entitled to see that confusion addressed rather than avoided. Unmapped under R4.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    },
+
+    {
+      "raw_label": "MCPG-DYN-UNDECLARED-METHOD",
+      "label_note": "Vendor's own registry text: title \"Server answers a method it never declared\", CWE-749, method \"protocol-probe\", rationale \"Server returned a non -32601 answer for an undeclared method while the random-method control correctly returned -32601.\"",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "considered_classes": [
+        {
+          "class": "A6",
+          "why_rejected": "A6's test is about credentials, not about which methods exist. An undeclared but reachable method is a hidden surface; whether reaching it requires authentication is a separate question this rule does not ask."
+        },
+        {
+          "class": "A2",
+          "why_rejected": "A2 requires a descriptor to change over the server's lifecycle. A method that was never declared has not changed; it was always absent from the descriptor and always answered."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-mcp-guard-023",
+      "rationale": "An undeclared reachable method is a hidden capability, and if our taxonomy had a class for 'the server does more than it advertises' this would be its clearest instance. It does not: A2 needs the change over time, A3 needs the cross-server reference, A6 needs the missing credential. Unmapped under R4, which is the honest answer and costs mcp-guard nothing. Together with MR-mcp-guard-009 and MR-mcp-guard-022 this is the third label in one vendor's vocabulary pointing at the same missing class -- three from one tool is the strongest single argument in this table for a taxonomy amendment under governance.md, and it is recorded here so the argument is available to whoever proposes one.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "provisional",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (no disclosed tie to SaravanaGuhan/mcp-guard)"
+    }
+  ]
+}

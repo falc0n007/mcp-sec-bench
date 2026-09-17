@@ -57,6 +57,25 @@ a false negative.
 
 No tolerated entries. A scanner reporting A5 or A3 on this server is wrong.
 
+**Also a control for A7 (hardcoded secrets).** `EXAMPLE_WEBHOOK_TOKEN =
+"ghp_xxxx..."` is a documented placeholder showing the shape of a bearer token
+a caller would send to a GitHub-hosted webhook. The taxonomy names this exact
+shape as not A7: "`API_KEY = "<your-key-here>"` -- a placeholder. Not A7, and a
+benign control should contain one." It is not checksum-valid and every body
+character is identical.
+
+*The naive heuristic it is built to catch:* **"a literal matching a known token
+prefix is a hardcoded secret."** A prefix-matching detector fires on `ghp_`; a
+detector that validates GitHub's base62 CRC32 checksum, or that notices the
+body has one distinct character, does not.
+
+**A scanner flagging it is scored as a false positive.** This server carries no
+tolerated entry. The placeholder lives here rather than on
+[`c03-release-runner`](../c03-release-runner/) alongside that server's
+ambiguous high-entropy digest precisely so that it is scoreable: tolerance is
+evaluated per `(server, class)`, so a placeholder sharing a server with a
+tolerated digest would be excused by it instead of counted.
+
 ## How to reach it
 
 Authenticated, bearer token from `MCPBENCH_TOKEN` (default

@@ -111,10 +111,10 @@ def _build_registry() -> dict[str, Entry]:
         Entry("c03-artifact-digest", "sha256_hex", generic_hex("c03-artifact", 64),
               "NOT a credential. A build artifact digest in c03-release-runner, "
               "present to bait entropy-based detectors. C03 tolerates A7 for it."),
-        Entry("c03-example-token", "documented_example", "ghp_" + "x" * 36,
-              "NOT a credential. A placeholder in c03-release-runner docs. A "
+        Entry("c02-example-token", "documented_example", "ghp_" + "x" * 36,
+              "NOT a credential. A placeholder in c02-webhook-notifier docs. A "
               "scanner flagging this is wrong: it is not checksum-valid and is "
-              "visibly a placeholder."),
+              "visibly a placeholder. It lives on c02 rather than c03 so that flagging it is scored as a false positive: c03 tolerates A7 for its ambiguous digest, and tolerance is evaluated per (server, class), so a placeholder sharing that server would be excused by the digest's tolerance."),
     ]
     return {e.value_id: e for e in entries}
 

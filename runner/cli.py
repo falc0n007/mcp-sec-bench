@@ -25,6 +25,7 @@ from .adapters.fixtures.near_miss import NearMissAdapter
 from .adapters.fixtures.oracle import OracleAdapter
 from .adapters.fixtures.overflagger import OverflaggerAdapter
 from .adapters.fixtures.static_only import StaticOnlyAdapter
+from .adapters.mcp_guard import McpGuardAdapter
 from .aggregate import aggregate
 from .corpus import load_corpus
 from .execute import DEFAULT_RUNS, ExecutionPlan, execute
@@ -39,10 +40,10 @@ ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = [OracleAdapter, OverflaggerAdapter, StaticOnlyAdapter,
             ForeignTaxonomyAdapter, NearMissAdapter]
 
-#: Real adapters land here once a scanner is confirmed runnable. Empty is an
-#: honest state, not a placeholder: docs/governance.md requires a scanner we
-#: cannot run to be published with its reason rather than quietly omitted.
-REAL_ADAPTERS: list = []
+#: Real adapters, in the order docs/project-plan.md records. A scanner we cannot
+#: run is still listed and still publishes a row carrying its reason, because
+#: governance.md requires that rather than a quiet omission.
+REAL_ADAPTERS: list = [McpGuardAdapter]
 
 
 def _adapters(selection: str) -> list:
