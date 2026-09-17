@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mcp-sec-bench/schema/manifest.schema.json",
+  "title": "mcp-sec-bench ground-truth manifest",
+  "description": "Declares what is true about one corpus server. This file is the ground truth a scanner's findings are scored against; see docs/scoring.md.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "server_id",
+    "kind",
+    "transport",
+    "entrypoint",
+    "port",
+    "authenticated",
+    "sensitive_tools",
+    "declared",
+    "tolerated",
+    "summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "server_id": {
+      "type": "string",
+      "pattern": "^(a0[1-9]|a10[ab]|c0[1-4])-[a-z0-9-]+$",
+      "description": "Directory name. Prefix encodes the class it is built for; benign controls use c01..c04."
+    },
+    "kind": { "enum": ["vulnerable", "benign"] },
+    "transport": { "enum": ["http", "stdio"] },
+    "entrypoint": { "type": "string", "default": "server.py" },
+    "port": {
+      "type": "integer",
+      "minimum": 8100,
+      "maximum": 8299,
+      "description": "Lab port. Must match the registry in corpus/conventions.md and be unique."
+    },
+    "authenticated": {
+      "type": "boolean",
+      "description": "Whether the server requires a bearer token. False is only correct for the A6 server and for benign controls exposing no sensitive tools."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 20,
+      "description": "One sentence: what this server pretends to be."
+    },
+    "sensitive_tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tools whose invocation has side effects or discloses non-public data. Defines the A6 denominator."
+    },
+    "declared": {
+      "type": "array",
+      "description": "Ground truth. Every flaw deliberately planted in this server. Vulnerable servers declare exactly one class; benign controls declare none.",
+      "items": {
+        "type": "object",
+        "required": ["class", "surface", "location", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "class": { "enum": ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"] },
+          "variant": {
+            "enum": ["a", "b"],
+            "description": "A10 only: a = unrestricted execution, b = allowlist bypass."
+          },
+          "surface": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "enum": ["static", "runtime"] },
+            "description": "Where the flaw is reachable. Must match the class's surface in docs/taxonomy.md."
+          },
+          "location": {
+            "type": "object",
+            "required": ["file"],
+            "additionalProperties": false,
+            "properties": {
+              "file": { "type": "string" },
+              "symbol": { "type": "string", "description": "Function or tool name carrying the flaw." },
+              "field_path": { "type": "string", "description": "A1/A3: the descriptor field, e.g. tools.summarize.description" },
+              "parameter": { "type": "string", "description": "A8/A10: the caller-controlled parameter." },
+              "line_hint": { "type": "integer", "description": "Advisory only. Never load-bearing for scoring." }
+            }
+          },
+          "proof_of_reach": {
+            "type": "string",
+            "description": "A concrete input or call demonstrating the flaw is genuinely reachable. Required for A5, A8, A10."
+          },
+          "runtime_trigger": {
+            "type": "object",
+            "description": "A2/A4: how the runner provokes the flaw. Must be deterministic.",
+            "additionalProperties": true
+          },
+          "counterpart": {
+            "type": "object",
+            "description": "A3 only: the server whose tool is being shadowed.",
+            "required": ["server_id", "tool"],
+            "additionalProperties": false,
+            "properties": {
+              "server_id": { "type": "string" },
+              "tool": { "type": "string" }
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 30,
+            "description": "Why this is an instance of the class, referencing the present-when test in docs/taxonomy.md."
+          }
+        }
+      }
+    },
+    "tolerated": {
+      "type": "array",
+      "description": "Classes a defensible scanner might report here without being wrong. Scored as neither TP nor FP. Frozen at corpus tag time; adding one later requires a governance amendment. Keep this list short: a tolerated entry is a hole in precision.",
+      "items": {
+        "type": "object",
+        "required": ["class", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "class": { "enum": ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"] },
+          "rationale": { "type": "string", "minLength": 30 }
+        }
+      }
+    },
+    "not_applicable": {
+      "type": "array",
+      "description": "Classes this server cannot structurally exhibit, excluded from its denominator. Derived and verified by tools/validate_manifests.py.",
+      "items": { "enum": ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"] }
+    },
+    "synthetic_credentials": {
+      "type": "array",
+      "description": "Every credential-shaped literal in this server, registered so the no-real-credentials check can distinguish planted from leaked.",
+      "items": {
+        "type": "object",
+        "required": ["value_id", "kind", "file"],
+        "additionalProperties": false,
+        "properties": {
+          "value_id": { "type": "string" },
+          "kind": { "type": "string" },
+          "file": { "type": "string" },
+          "intentional": { "type": "boolean", "default": true }
+        }
+      }
+    }
+  }
+}

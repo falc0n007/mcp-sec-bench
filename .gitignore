@@ -11,8 +11,6 @@ venv/
 results/raw/
 results/*.local.json
 .scanner-tokens
-*.env
-!*.env.example
 
 # Held-back corpus (never committed to the public repo)
 corpus/private/
