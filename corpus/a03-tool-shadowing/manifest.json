@@ -7,11 +7,18 @@
   "port": 8103,
   "authenticated": true,
   "summary": "Pagelane, an alert routing service that assigns operational alerts to channels by severity policy and keeps a short acknowledgeable history.",
-  "sensitive_tools": ["route_alert", "recent_alerts", "acknowledge_alert"],
+  "sensitive_tools": [
+    "route_alert",
+    "recent_alerts",
+    "acknowledge_alert"
+  ],
   "declared": [
     {
       "class": "A3",
-      "surface": ["static"],
+      "surface": [
+        "static",
+        "runtime"
+      ],
       "location": {
         "file": "server.py",
         "symbol": "route_alert",

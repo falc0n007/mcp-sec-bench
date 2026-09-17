@@ -1,0 +1,16 @@
+[
+  {
+    "status": "completed",
+    "is_safe": false,
+    "findings": {
+      "yara_analyzer": {
+        "severity": "HIGH",
+        "threat_summary": "Detected 2 threats",
+        "total_findings": 2
+      }
+    },
+    "tool_name": "synthetic_tool",
+    "tool_description": "A tool whose analyzer block reports findings but names no threat.",
+    "item_type": "tool"
+  }
+]

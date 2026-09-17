@@ -26,6 +26,7 @@ from .adapters.fixtures.oracle import OracleAdapter
 from .adapters.fixtures.overflagger import OverflaggerAdapter
 from .adapters.fixtures.static_only import StaticOnlyAdapter
 from .adapters.mcp_guard import McpGuardAdapter
+from .adapters.ramparts import RampartsAdapter
 from .aggregate import aggregate
 from .corpus import load_corpus
 from .execute import DEFAULT_RUNS, ExecutionPlan, execute
@@ -43,7 +44,7 @@ FIXTURES = [OracleAdapter, OverflaggerAdapter, StaticOnlyAdapter,
 #: Real adapters, in the order docs/project-plan.md records. A scanner we cannot
 #: run is still listed and still publishes a row carrying its reason, because
 #: governance.md requires that rather than a quiet omission.
-REAL_ADAPTERS: list = [McpGuardAdapter]
+REAL_ADAPTERS: list = [McpGuardAdapter, RampartsAdapter]
 
 
 def _adapters(selection: str) -> list:

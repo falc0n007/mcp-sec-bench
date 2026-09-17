@@ -7,11 +7,18 @@
   "port": 8101,
   "authenticated": true,
   "summary": "Docket, a document summarizing service that stores short text documents in memory and returns extractive summaries and keywords.",
-  "sensitive_tools": ["store_document", "summarize_document", "extract_keywords"],
+  "sensitive_tools": [
+    "store_document",
+    "summarize_document",
+    "extract_keywords"
+  ],
   "declared": [
     {
       "class": "A1",
-      "surface": ["static"],
+      "surface": [
+        "static",
+        "runtime"
+      ],
       "location": {
         "file": "server.py",
         "symbol": "summarize_document",

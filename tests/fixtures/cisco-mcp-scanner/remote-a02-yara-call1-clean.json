@@ -1,0 +1,32 @@
+[
+  {
+    "status": "completed",
+    "is_safe": true,
+    "findings": {
+      "yara_analyzer": {
+        "severity": "SAFE",
+        "threat_names": [],
+        "threat_summary": "No threats detected",
+        "total_findings": 0
+      }
+    },
+    "tool_name": "get_changelog",
+    "tool_description": "Return recent changelog entries, newest first.",
+    "item_type": "tool"
+  },
+  {
+    "status": "completed",
+    "is_safe": true,
+    "findings": {
+      "yara_analyzer": {
+        "severity": "SAFE",
+        "threat_names": [],
+        "threat_summary": "No threats detected",
+        "total_findings": 0
+      }
+    },
+    "tool_name": "summarize_changelog",
+    "tool_description": "Summarise the most recent changelog entries.\n\nArgs:\n    count: How many recent entries to summarise (1-20). Defaults to 3.",
+    "item_type": "tool"
+  }
+]

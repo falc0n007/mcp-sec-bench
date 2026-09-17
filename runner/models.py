@@ -27,9 +27,11 @@ CLASSES: tuple[str, ...] = (
 
 # From docs/taxonomy.md. Which stage can credit which class.
 CLASS_STAGES: dict[str, set[str]] = {
-    "A1": {"static"},
+    # Advertised metadata lives in the source AND is served by tools/list,
+    # so the metadata classes are creditable from either stage.
+    "A1": {"static", "runtime"},
     "A2": {"static", "runtime"},
-    "A3": {"static"},
+    "A3": {"static", "runtime"},
     "A4": {"runtime"},
     "A5": {"runtime"},
     "A6": {"runtime"},

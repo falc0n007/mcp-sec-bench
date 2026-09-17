@@ -1,0 +1,5 @@
+[
+  {
+    "status": "completed",
+    "is_safe": true,
+    "findings": {"yara_analyzer": {"severity": "SAFE",

@@ -23,9 +23,9 @@ SCHEMA = ROOT / "schema" / "manifest.schema.json"
 # From docs/taxonomy.md. A class may only be declared on a surface it is
 # reachable from.
 SURFACES = {
-    "A1": {"static"},
+    "A1": {"static", "runtime"},
     "A2": {"static", "runtime"},
-    "A3": {"static"},
+    "A3": {"static", "runtime"},
     "A4": {"runtime"},
     "A5": {"runtime"},
     "A6": {"runtime"},

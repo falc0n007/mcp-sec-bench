@@ -45,12 +45,17 @@ defaults are what users get, so defaults are what we measure.
 Four traps this adapter exists to not fall into
 ===============================================
 
-1. **The scanner exits 0 when the scan failed.** A wrong URL, a missing token, a
-   server that will not talk: all produce `Error during scanning: ...` on stderr,
-   an EMPTY stdout, and exit status **0**. An adapter that trusted the exit code
-   would publish "Cisco found nothing" when the truth is "Cisco never connected".
-   This adapter treats stdout that does not parse as a JSON array as a hard
-   error and says so, and records how many items were actually scanned.
+1. **A failed scan and a clean scan differ only in stdout.** A wrong URL, a
+   missing token, a server that will not talk: all produce
+   `Error during scanning: ...` on stderr and an EMPTY stdout. The exit status
+   is 1 (measured, and measured again after an earlier reading through a shell
+   pipe gave 0 -- so the exit code is usable, but it is not the only signal and
+   this adapter does not rely on it alone). A successful scan with no findings
+   is a JSON array of SAFE verdicts, and an empty `prompts` or `resources`
+   surface is the literal `[]` with exit 0. So "Cisco found nothing" and "Cisco
+   never connected" are distinguished here by whether stdout parses as a JSON
+   array, not by exit code, and the number of items actually scanned is recorded
+   per surface in `AdapterResult.extra["items_scanned"]`.
 
 2. **With no subcommand the CLI silently scans `https://mcp.deepwiki.com/mcp`.**
    Verified: `mcp-scanner --analyzers yara --source-path /corpus/a01... ` returns
@@ -134,23 +139,28 @@ def _endpoint_in_container(url: str) -> str:
 def _extract_json_array(stdout: str) -> list[Any]:
     """Parse `--raw` output, or refuse.
 
-    Cisco exits 0 on a scan that never connected, leaving stdout empty. Treating
-    that as "zero findings" is the difference between reporting a detection
-    failure and reporting a plumbing failure, so anything that is not a JSON
-    array is an error here rather than a quiet empty result.
+    A scan that never connected leaves stdout empty. Treating that as "zero
+    findings" is the difference between reporting a detection failure and
+    reporting a plumbing failure, so anything that is not a JSON array is an
+    error here rather than a quiet empty result.
+
+    `strict=False` is deliberate: a tool description can carry a literal control
+    character, and Python's strict decoder rejects the whole document for it.
+    Losing an entire scan to one stray byte in vendor output would be our bug,
+    not theirs.
     """
     text = stdout.strip()
     if not text:
         raise CiscoScanFailed("scanner produced no stdout")
     try:
-        parsed = json.loads(text)
+        parsed = json.loads(text, strict=False)
     except json.JSONDecodeError:
         start, end = text.find("["), text.rfind("]")
         if start == -1 or end <= start:
             raise CiscoScanFailed(
                 f"stdout is not JSON: {text.splitlines()[0][:200]!r}") from None
         try:
-            parsed = json.loads(text[start:end + 1])
+            parsed = json.loads(text[start:end + 1], strict=False)
         except json.JSONDecodeError as exc:
             raise CiscoScanFailed(f"stdout is not parseable JSON: {exc}") from None
     if not isinstance(parsed, list):

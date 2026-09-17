@@ -129,10 +129,11 @@ Every scanner is scored in two stages, reported separately and combined.
 | Stage | Input | Classes reachable |
 | --- | --- | --- |
 | **Stage 1 — static** | Source tree and packaging metadata | A1, A2, A3, A7, A8, A9, A10 |
-| **Stage 2 — runtime** | A live endpoint the scanner may exercise | A2, A4, A5, A6 |
+| **Stage 2 — runtime** | A live endpoint the scanner may exercise | A1, A2, A3, A4, A5, A6 |
 
-A2 appears in both; credit from either stage counts once, and the results record
-which stage produced it.
+The metadata classes A1, A2 and A3 appear in both stages, because advertised
+tool metadata is both written in the source and served by `tools/list`. Credit
+from either stage counts once, and the results record which stage produced it.
 
 A scanner that only performs static analysis is **not penalised for Stage 2**.
 Its Stage 2 items are marked `not attempted`, excluded from its Stage 2

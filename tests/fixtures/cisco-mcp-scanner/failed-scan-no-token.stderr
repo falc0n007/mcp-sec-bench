@@ -1,0 +1,2 @@
+2026-09-17 18:18:39,257 - mcpscanner.core.scanner - ERROR - Error scanning server http://host.docker.internal:8101/mcp: Server returned an error response
+Error during scanning: Server returned an error response

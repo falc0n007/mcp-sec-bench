@@ -1,0 +1,10 @@
+[
+  {
+    "instructions": "Docket stores short text documents and summarizes them. Store a document first, then summarize it or pull its keywords by id.",
+    "server_name": "Unknown",
+    "protocol_version": "Unknown",
+    "status": "completed",
+    "is_safe": true,
+    "findings": []
+  }
+]

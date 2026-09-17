@@ -1,0 +1,222 @@
+{
+  "schema_version": "1.0",
+  "scanner_id": "cisco-mcp-scanner",
+  "display_name": "Cisco mcp-scanner",
+  "scanner_versions": ["4.8.4"],
+  "adapter_version": "1.0.0",
+  "label_provenance": "captured-from-real-output",
+  "label_source_field": "findings.<analyzer>.threat_names[] (each element becomes one RawFinding.raw_label, verbatim)",
+  "provenance_note": "Every raw_label below was copied from stdout of cisco-ai-mcp-scanner 4.8.4 running in mcp-sec-bench/cisco-mcp-scanner:4.8.4 on 2026-09-17, and the captures are committed under tests/fixtures/cisco-mcp-scanner/ with an index in that directory's README.md. PROMPT INJECTION was captured from the corpus itself (remote-a02-yara-call4-mutated.json, server a02-rug-pull on its fourth tools/list). `unknown` was captured from the corpus with the readiness analyzer enabled (remote-a01-yara-readiness.json). The remaining six threat names do not fire anywhere on this corpus, so they were elicited with a synthetic descriptor set written against the shipped rules and captured in label-probe-yara.json; the descriptors are committed beside it as label-probe-tools.json so the elicitation is reviewable. No label here was taken from vendor documentation or invented. Checked against corpus_version v1-0f9650d5044b.",
+  "frozen_for_corpus_version": null,
+  "matching": {
+    "case_insensitive": false,
+    "strip_surrounding_whitespace": false,
+    "note": "Byte-exact. 4.8.4 emits these strings from a fixed table in mcpscanner/threats/threats.py, upper-cased and space-separated, with no observed variation across the 64 scans behind these captures. `unknown` is lower-case in the same field; that is the scanner's own casing and is matched as such rather than normalised, so if Cisco ever emits `UNKNOWN` the table reports a gap instead of silently absorbing the change."
+  },
+  "notes": [
+    "THE LABEL IS NOT THE YARA RULE NAME. The wheel ships ten rule files -- code_execution, coercive_injection, command_injection, credential_harvesting, data_exfiltration, prompt_injection, script_injection, sql_injection, system_manipulation, tool_poisoning -- and none of those strings ever appears in output. What appears in threat_names is each rule's meta.threat_type, and the ten rules collapse onto SEVEN distinct values. A mapping table keyed on the rule filenames would match nothing and score Cisco at zero for a reason that has nothing to do with its detection. The collapse, read from the rule files: PROMPT INJECTION <- prompt_injection + coercive_injection; INJECTION ATTACK <- command_injection + script_injection + sql_injection; CODE EXECUTION <- code_execution; CREDENTIAL HARVESTING <- credential_harvesting; DATA EXFILTRATION <- data_exfiltration; SYSTEM MANIPULATION <- system_manipulation; TOOL POISONING <- tool_poisoning.",
+    "INJECTION ATTACK is the clearest case in the benchmark of a vendor label that is coarser than our line: one string covers shell-metacharacter patterns, embedded script payloads, and SQL injection, and taxonomy.md's scope boundary puts SQL injection explicitly outside the taxonomy while command execution is A10. Nothing the runner records separates the three, so the entry is unmapped rather than mapped to A10 on the strength of one of its three rules.",
+    "Six of the eight entries are unmapped, and that ratio is a fact about what the credential-free configuration looks at rather than a judgment about Cisco. The default configuration reads tool descriptors over the wire and nothing else: no source, no tool invocation. A descriptor can carry an A1 or A3 payload; A5 through A10 are properties of code or of live behaviour that this configuration never examines. Per docs/mapping-rationale.md section 7, unmapped costs the scanner nothing in precision and is reported in its own column.",
+    "Cisco's own intermediate vocabulary (scanner_category, aitech, aitech_name, aisubtech, aisubtech_name, e.g. PROMPT INJECTION -> AITech-1.1 Direct Prompt Injection / AISubtech-1.1.1 Instruction Manipulation) is preserved by the adapter in RawFinding.raw of every finding. It is evidence a reviewer can weigh in a mapping argument. It is deliberately NOT used as the mapping key: keying on a vendor's own taxonomy crosswalk would make our numbers move whenever they revise their crosswalk, and would substitute their classification for the present-when tests in docs/taxonomy.md.",
+    "The LLM, behavioral, API (Cisco AI Defense), prompt-defense, VirusTotal and vulnerable-package analyzers have their own threat-name vocabularies in the same wheel. They are absent from this table on purpose: none of them runs credential-free, this project has not observed a single one of their labels in output it produced, and drafting entries from a source file we read rather than output we ran is exactly what docs/mapping-rationale.md section 10 refuses to do. They get entries when a configuration that runs them exists and its output is committed.",
+    "No entry in this table is keyed on which server a finding landed on, and no entry was chosen after looking at what it would do to Cisco's score (rule R5). MR-cisco-mcp-scanner-001 is the one entry that moves a number on this corpus, and it moves it DOWN: it converts Cisco's only real detection into a near miss. That direction is stated here so the entry cannot be read as having been tuned."
+  ],
+  "entries": [
+    {
+      "raw_label": "PROMPT INJECTION",
+      "label_note": "Cisco: 'Detects prompt strings used to override or force malicious tool calls' (prompt_injection.yara) and 'Detects coercive prompt injections in tool description fields' (coercive_injection.yara). Both rules are literal regex sets over the scanned text -- instruction-override phrasings, concealment directives, role redefinition, privilege-escalation phrasings, and a set of evasion wrappers. Cisco's own crosswalk: AITech-1.1 Direct Prompt Injection / AISubtech-1.1.1 Instruction Manipulation.",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "Present when a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently.",
+        "why_satisfied": "The property this label reports is the presence, in a scanned descriptor field, of natural-language text drawn from precisely that set: the rule's $instruction_overrides alternation is instruction-issuing text, $hidden_behavior is concealment directives ('do not mention', 'tell the user only about'), $role_redefinition is 'new instructions: you are', and $privilege_escalation and $advanced_overrides are priority assertions over prior guidance. The label and the class name the same property -- agent-directed instruction text inside tool metadata -- and the only descriptor field the credential-free configuration reads is the one the A1 test is written about."
+      },
+      "considered_classes": [
+        {
+          "class": "A2",
+          "why_rejected": "A2's test requires that 'the descriptor served for a given tool differs between two points in the server's lifecycle'. This label reports the content of one snapshot; the scanner performs exactly one tools/list per invocation and does no descriptor diffing, so it reports no difference and cannot satisfy the first half of the A2 test. A1's own 'Not this class' clause points the other way -- 'the payload is present from the first tools/list. If it only appears after a state change, it is A2' -- but that clause distinguishes two situations on the target, and R5 forbids a mapping decision from consulting the target. The consequence is recorded in the rationale below rather than resolved by looking at the corpus."
+        },
+        {
+          "class": "A3",
+          "why_rejected": "A3 requires that 'a descriptor field on X references a tool or server other than itself'. Nothing in either rule tests for a cross-server reference, and nothing in the emitted finding carries one: threat_names, threat_summary and the taxonomy block are identical whether the matched text names another server or not. Mapping this label to A3 would be crediting a distinction the label does not draw."
+        },
+        {
+          "class": "A4",
+          "why_rejected": "A4 requires that 'a tool call with manifest-specified arguments returns content' that would qualify as an instruction. The credential-free configuration never invokes a tool -- it reads tools/list, prompts/list, resources/list and the server instructions block -- so the text this label fires on is never a return value. docs/mapping-rationale.md section 11 calls A1-vs-A4 the highest-risk boundary in the taxonomy and offers R3's stage split as the mitigation; that mechanism is unavailable for this scanner, because its metadata reading happens in the runtime stage, so a stage-scoped entry could not separate a metadata payload from a return-value payload. That is a limitation of R3 against this tool, not a licence to guess, so the entry stays scoped 'any' and rejects A4 on what the label reports."
+        }
+      ],
+      "resolution_rules": ["R1", "R2", "R5", "R6"],
+      "rationale_id": "MR-cisco-mcp-scanner-001",
+      "rationale": "This is the only Cisco label that fires anywhere on this corpus, so it is the only entry that moves a number, and it is worth being precise about what it costs the tool. On a02-rug-pull the scanner reports PROMPT INJECTION against the mutated summarize_changelog description. That descriptor is an A2 instance: the corpus manifest declares A2 with a deterministic trigger on the fourth tools/list, and we measured the behaviour directly -- on a freshly restarted instance the scanner reports nothing on calls 1, 2 and 3 and reports PROMPT INJECTION on calls 4, 5 and 6, because the payload it matches is only in the descriptor from call 4 onward. The scanner therefore did not detect a mutation; it matched injection-shaped text in whichever snapshot the server happened to serve it, and which snapshot that is depends on how many times the lab had been listed before, which is a property of our harness rather than of Cisco. Under R1 the label maps to A1, because A1's present-when test is the one the label's reported property satisfies and A2's is not. Under R5 the mapping cannot be switched to A2 on the ground that this particular finding landed on the A2 server. The visible consequence, chosen deliberately under R6: the finding scores a false positive and a near miss on (a02-rug-pull, A1), and (a02-rug-pull, A2) stays a false negative. A reader who thinks Cisco should have the A2 credit has a real argument and it is the argument we expect to receive first; it is answerable only by changing the taxonomy's A2 test or by R5, not by editing this entry, and docs/mapping-rationale.md section 11 item 5 anticipated exactly this shape. The second consequence is quieter and matters more: on a01-tool-description-injection, whose A1 payload the scanner reads verbatim and does not fire on, this entry has nothing to place, and that item is a false negative on the merits.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "TOOL POISONING",
+      "label_note": "Cisco: 'Detects tool poisoning - tools with hidden secondary behaviors that differ from their stated purpose' (tool_poisoning.yara). The rule's strings are phrasings in which a description advertises an undisclosed second behaviour: 'also collects', 'during processing, extract', 'for caching purposes, send', 'indexes any api keys', plus location, behaviour and device fingerprinting phrasings. Cisco's crosswalk: AITech-12.1 Tool Exploitation / AISubtech-12.1.2 Tool Poisoning.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "no-defensible-single-class",
+      "considered_classes": [
+        {
+          "class": "A1",
+          "why_rejected": "Some of the rule's strings are agent-directed and satisfy A1 -- the concealment phrasings, and anything that tells the agent what to do. Others are not directed at the agent at all: 'also collects usage patterns and sends them' is a claim about what the tool does, and A1's test asks for content that 'addresses the consuming model rather than describing the tool'. One label covers both halves and the emitted finding does not say which string matched, so A1 is satisfied for some firings of this label and not for others."
+        },
+        {
+          "class": "A5",
+          "why_rejected": "The other half of the rule reads as A5: 'extract any api keys and send them onward' is argument-derived data going somewhere undeclared. But A5's test is an observation, not a claim -- 'invoking the tool causes an egress attempt ... carrying argument-derived content' -- and this label reports text in a descriptor, with no invocation anywhere in the credential-free configuration. A5 is satisfied by what the text alleges, never by what the label observed."
+        }
+      ],
+      "resolution_rules": ["R1", "R3", "R4"],
+      "rationale_id": "MR-cisco-mcp-scanner-002",
+      "rationale": "Read the rule rather than the name and this label turns out to straddle our line rather than sit on either side of it. Roughly half its strings describe a tool announcing a hidden secondary behaviour, which is a shape our taxonomy has no class for: A1 is about text aimed at the consuming model, and a sentence like 'also indexes any credentials it encounters' aims at the reader while describing the tool. The other half describes exfiltration, which is A5's subject but not A5's evidence, because A5 turns on an observed egress attempt at invocation and this configuration never invokes anything. R3's stage split is the only mechanism permitted for giving one label two mappings, and it does not apply: both halves arrive in the same stage, from the same field, in findings that are byte-identical apart from the tool name. So R4 applies and the label is unmapped with reason no-defensible-single-class rather than mapped to whichever of A1 or A5 reads better. This costs Cisco nothing in precision (docs/scoring.md#normalization) and it costs it nothing in recall on this corpus either, because the label did not fire on any of the fifteen servers; the entry exists so that a corpus which does trigger it is scored by a decision made in advance. The honest reading of this entry is that it is a gap in our ten classes: 'the description advertises an undisclosed secondary behaviour' is a real MCP flaw shape, Cisco ships a detector for it, and we have nowhere to put it. That belongs in the taxonomy-review trigger, not in Cisco's column.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "INJECTION ATTACK",
+      "label_note": "Cisco: emitted by three rules at once -- command_injection.yara ('shell operators, system commands, and network tools'), script_injection.yara ('embedded scripting payloads (JS, VBScript, etc.) in MCP tool descriptions') and sql_injection.yara ('SQL injection attack patterns including keywords, tautologies, and database functions'). Cisco's crosswalk: AITech-9.1 / AISubtech-9.1.4 'Injection Attacks (SQL, Command Execution, XSS)'.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "no-defensible-single-class",
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10's test is 'the manifest records a caller-reachable execution sink', i.e. caller-controlled input reaching process execution. The command_injection rule reports that shell-shaped text is present in the scanned string -- 'curl https://...', 'nc -e', 'rm -rf', a Windows command name -- and asserts nothing about caller control or reachability. Beyond that, the same label is emitted by the SQL injection rule, and taxonomy.md's scope boundary says in terms that 'a SQL injection reachable only through a tool argument is a real bug but is not an MCP attack class'. Mapping this label to A10 would credit A10 for firings that are out of scope by construction, and there is no field in the output that says which of the three rules matched."
+        }
+      ],
+      "resolution_rules": ["R1", "R3", "R4"],
+      "rationale_id": "MR-cisco-mcp-scanner-003",
+      "rationale": "One string, three rules, and the three land on opposite sides of our scope boundary: command injection is A10's subject, SQL injection is explicitly excluded by taxonomy.md, and embedded script payloads are neither. Cisco's output does not disclose which rule fired -- threat_names carries the shared threat_type and nothing else -- and R3 permits a split only on the stage, which is identical for all three. So under R4 the label is unmapped with reason no-defensible-single-class. This is the entry docs/mapping-rationale.md section 11 item 8 predicted, and it is worth naming the alternative we rejected: we could have mapped the label to A10 and accepted that SQL-injection firings would be scored as A10 findings, which on a corpus with no planted SQL injection would look harmless and would quietly become wrong the moment someone added one. Even on the command-injection half the mapping would be thin, because a regex hit on 'curl https://' in a description is not the caller-reachable sink A10 asks for -- the same pattern fires on a tool that honestly documents fetching a URL. A vendor arguing for A10 here would be arguing that a text pattern should be credited as a data-flow finding; we would rather publish the unmapped count and let that argument be made in the open.",
+      "confidence": "high",
+      "dispute_risk": "medium",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "CODE EXECUTION",
+      "label_note": "Cisco: 'Detects code execution functions in MCP implementations focusing on Scripts - the primary languages used in agentic servers' (code_execution.yara). The strings are bare call-shape regexes: system(, exec(, popen(, eval(, os.system(, subprocess., child_process, Function(, vm.runInThisContext, base64 decode helpers. Severity LOW in Cisco's own table, the only one of the seven that is not HIGH. Cisco's crosswalk: AITech-9.1 / AISubtech-9.1.1 Code Execution.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A10",
+          "why_rejected": "A10 is 'caller-controlled input reaches process execution, either because no restriction exists or because a command allowlist can be escaped', and is present when the manifest records a caller-reachable execution sink. This label reports that a string resembling an exec call appears in the scanned text. It carries no parameter, no data flow, no reachability claim, and Cisco itself rates it LOW. The corpus control c03-release-runner exists precisely to separate detectors that analyse containment from detectors that pattern-match on an execution primitive: it runs a fixed command with no caller-controlled component and is not A10. A label that cannot tell c03 from a10a is not reporting A10."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-cisco-mcp-scanner-004",
+      "rationale": "The contrast that decides this entry is with another scanner in the same benchmark. mcp-guard emits MCPG-PY-SHELL-TAINT with the title 'Request-derived value reaches a shell/eval sink (Python): subprocess.run()' -- the label itself asserts that a parameter-derived value reaches the sink, which is what A10's present-when test asks for, so that label maps. Cisco's CODE EXECUTION asserts that the token 'subprocess.' was present. Those are different claims, and the difference is the whole content of A10. Applying R1 literally, no class's present-when test is satisfied by 'an execution primitive appears in this text', so the label is unmapped with reason insufficient-specificity -- a statement about the resolution of our class, not about the quality of the rule. Two things keep this from being a convenient answer. It denies Cisco a class it might otherwise have scored on, so we checked the review symmetry: we would hold the same line for a tool we liked less, and we hold the opposite line for mcp-guard on the strength of what its label says rather than who ships it. And it is not a free pass either: unmapped does not touch precision, so a corpus where this rule fires on the benign controls would not be penalised for it, which is a real asymmetry and is disclosed rather than hidden. In the credential-free configuration the point is largely moot, since Cisco reads tool descriptions and not source, and a description containing 'os.system(' is a curiosity rather than a vulnerability.",
+      "confidence": "high",
+      "dispute_risk": "medium",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "CREDENTIAL HARVESTING",
+      "label_note": "Cisco: 'Detects potential exposure of sensitive information like API keys, passwords, tokens, and certificates' (credential_harvesting.yara). The strings combine credential-shaped literals (AKIA..., ghp_..., sk-..., PEM headers, ssh-rsa), well-known secret environment variable NAMES (AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY, JWT_SECRET, DATABASE_PASSWORD), and broad verb groups (read, fetch, dump, exfiltrate; curl, scp, base64). Cisco's crosswalk: AITech-8.2 / AISubtech-8.2.3 Data Exfiltration via Agent Tooling.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "no-defensible-single-class",
+      "considered_classes": [
+        {
+          "class": "A7",
+          "why_rejected": "A7 is 'a credential-shaped literal in the server's source or committed configuration', present when 'the value is syntactically a credential of a recognisable type'. The rule's $api_credentials and $key_certificate_content strings are exactly that test, so this half of the label satisfies A7. But the same label is emitted by the halves below, and A7's own 'Not this class' clause excludes what they match: 'os.environ[\"API_KEY\"] -- a reference, not a secret. Not A7.'"
+        },
+        {
+          "class": "A9",
+          "why_rejected": "A9 is the leak channel -- 'a tool that returns process environment contents to the caller without an allowlist, or that lets the caller name the variable to read' -- and A9's 'Not this class' clause hands the literal back to A7. The rule's $env_secret_vars and $ai_model_credential_names strings match the NAMES of secret environment variables, which is the A9 side of that boundary, not the A7 side. So each of the two classes disclaims the other's half of this one label, which is the situation R2 cannot settle."
+        }
+      ],
+      "resolution_rules": ["R1", "R2", "R3", "R4"],
+      "rationale_id": "MR-cisco-mcp-scanner-005",
+      "rationale": "docs/mapping-rationale.md section 11 item 3 names A7-vs-A9 as the most likely first dispute in the whole benchmark, and this label is that dispute in its purest form: a single vendor string covering both the credential literal and the environment-variable channel, with our two classes each explicitly disclaiming the other's half. R2 normally settles a span by quoting a disclaimer, and here both disclaimers are quotable and they point in opposite directions, which settles nothing. R3's stage split does not help either: both halves come from the same field in the same stage. R4 is therefore the answer -- unmapped, no-defensible-single-class -- and we would rather publish that than pick A7 because most scanners mean A7 by 'credential'. A reviewer should note what this would cost on a corpus where it fired. a07-hardcoded-secrets plants format-valid synthetic credentials and a09-unrestricted-env-access plants the environment channel; if Cisco's source-reading configuration ever fires this label on either, the item stays a false negative under this entry and the finding lands in the unmapped column. That is the asymmetry docs/mapping-rationale.md section 7 describes and accepts, and it is disclosed to the vendor before publication rather than discovered afterwards. On the credential-free configuration none of this arises: the label did not fire on any of the fifteen servers, because the scanner reads descriptions and our planted secrets are in source.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "DATA EXFILTRATION",
+      "label_note": "Cisco: 'Detects data exfiltration patterns - sending data to external servers, hidden uploads, remote storage' (data_exfiltration.yara). The strings are phrasings -- 'uploads to an external server', 'silently sends', 'never tell the user', 'collects and transmits', clipboard and conversation-history transfer, and a list of obviously hostile domain names. Cisco's crosswalk: AITech-8.2 / AISubtech-8.2.3 Data Exfiltration via Agent Tooling.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A5",
+          "why_rejected": "A5 is present when 'invoking the tool causes an egress attempt, a write outside the server's declared working area, or emission to a log sink outside the process, carrying argument-derived content', observed at the lab's sinkhole. This label reports phrasing in a descriptor. It never invokes anything, so it observes no attempt; and A5 turns on whether the destination is DECLARED, which is a property of the server's stated purpose that no text pattern carries -- docs/mapping-rationale.md section 11 item 6 says so in advance. The rule would fire identically on a05-argument-exfiltration and on c02-webhook-notifier, the benign control whose declared job is to post its arguments to a user-supplied URL."
+        }
+      ],
+      "resolution_rules": ["R1", "R4"],
+      "rationale_id": "MR-cisco-mcp-scanner-006",
+      "rationale": "The name is close enough to A5 that mapping it would look obvious, which is the reason to be careful. A5 is defined by an observation the runner makes -- an egress attempt captured at the sinkhole while a tool is invoked with manifest-specified arguments -- and by a judgment about the server's declared purpose. This label carries neither: it reports that a descriptor says something about sending data somewhere. On our corpus that distinction is not academic. c02-webhook-notifier is the control built to catch exactly this confusion: its declared purpose is to post arguments to a URL the user supplies, it is not A5, and any phrasing-based detector will read it the same way it reads a05-argument-exfiltration. Under R1 no present-when test is satisfied by what the label reports, so it is unmapped with reason insufficient-specificity. The entry is written so that if the label ever does fire on a05 and on c02 together, the outcome is decided by this paragraph rather than by which server we noticed first -- which is R5 working as intended. Note the shape of the residual error, per R6: the cost falls on recall, not precision, and it falls on a class Cisco's credential-free configuration structurally cannot reach anyway, since it does not invoke tools.",
+      "confidence": "high",
+      "dispute_risk": "medium",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "SYSTEM MANIPULATION",
+      "label_note": "Cisco: 'Detects system manipulation, privilege escalation, and destructive file operations' (system_manipulation.yara). The strings bundle environment access ($PATH, process.env, os.environ, getenv(), destructive file operations (rm -rf, dd if=, shred, find -delete), permission and ownership changes (chmod 777, setuid, chown root), sensitive path references (/etc/passwd, /etc/shadow, /usr/bin/, C:\\Windows\\System32), privilege escalation (sudo -s, su -, doas) and process manipulation (kill -9, pkill -f, lsof). Cisco's crosswalk: AITech-9.1 / AISubtech-9.1.2 Unauthorized or Unsolicited System Access.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "insufficient-specificity",
+      "considered_classes": [
+        {
+          "class": "A9",
+          "why_rejected": "A9 is 'a tool that returns process environment contents to the caller without an allowlist, or that lets the caller name the variable to read'. The rule's $sys_env_access string matches the tokens os.environ, process.env and getenv( wherever they appear, which is a reference to the environment and not a caller-selectable read returned to the caller. A9's benign counterpart c01-notes-workspace returns a fixed allowlisted subset and contains those same tokens; taxonomy.md says in terms that 'naive detectors that flag any reference to os.environ will fire on it'. The label is that detector."
+        },
+        {
+          "class": "A8",
+          "why_rejected": "A8 requires that 'a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable'. The rule's path strings match literal sensitive paths and its file strings match destructive operations -- deletion and permission changes, which are writes, not the unconstrained read A8 is about. No caller-supplied value and no containment analysis is involved."
+        },
+        {
+          "class": "A10",
+          "why_rejected": "The privilege-escalation and process-manipulation strings name commands, which is the same objection as MR-cisco-mcp-scanner-004: naming an execution primitive is not the caller-reachable sink A10's present-when test asks for."
+        }
+      ],
+      "resolution_rules": ["R1", "R3", "R4"],
+      "rationale_id": "MR-cisco-mcp-scanner-007",
+      "rationale": "This label bundles at least four unrelated properties -- environment access, destructive file operations, permission and privilege changes, and process control -- and brushes three of our classes without satisfying any of their tests. Each of A8, A9 and A10 asks for a relationship between caller-supplied input and a sink; the rule asks whether a token appears. R3 offers no split because every one of those strings arrives in the same field in the same stage, so R4 gives unmapped with reason insufficient-specificity. The sharpest evidence that this is the right call is in taxonomy.md itself: A9's corpus constraint predicts that 'naive detectors that flag any reference to os.environ' will fire on the benign control c01-notes-workspace, and $sys_env_access is precisely such a detector. A mapping to A9 would turn that predicted false positive into a scored one on c01 while also crediting a09 -- one entry producing a true positive and a false positive from the same undifferentiated pattern, which tells a reader nothing about whether the tool can distinguish them. Worth recording for the disclosure round: this label never fired on our fifteen servers, but that is an artefact of the credential-free configuration reading descriptions rather than source. Our corpus servers all reference os.environ in their auth blocks, so a Cisco configuration that read source would very likely fire SYSTEM MANIPULATION on all fifteen, vulnerable and benign alike. If that configuration is ever run, this entry keeps those firings out of both the credit and the penalty columns, which is the outcome we would want in either direction.",
+      "confidence": "high",
+      "dispute_risk": "medium",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    },
+    {
+      "raw_label": "unknown",
+      "label_note": "Emitted by the readiness analyzer, verbatim and lower-case, as the sole element of threat_names. The substance of the finding is in threat_summary, e.g. \"Tool 'store_document' does not specify a timeout. Operations may hang indefinitely if external services become unresponsive.\" Captured in tests/fixtures/cisco-mcp-scanner/remote-a01-yara-readiness.json, where every one of a01's four tools carries it with total_findings = 7 and severity HIGH, and mcp_taxonomies is an empty array.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "informational-only",
+      "rationale_id": "MR-cisco-mcp-scanner-008",
+      "rationale": "The readiness analyzer is not in this adapter's default configuration, for reasons the capture makes plain: it reports HIGH on every tool of every server for operational-maturity properties such as a missing timeout, seven findings per tool, with no taxonomy crosswalk attached and the literal threat name `unknown`. It is a useful production-readiness checklist and it is not a security verdict, so none of the ten present-when tests in taxonomy.md is in play; the reason recorded is informational-only rather than insufficient-specificity, because the problem is not that the label is too coarse to place but that it is not making a security claim. The entry exists rather than being left absent for two reasons. The label is real, captured output, and an absent entry would be reported as a gap in our table -- which would be a false signal, since we have looked at it and decided. And it means that if someone runs the readiness configuration as an additional labelled row, its several hundred findings land in the unmapped column with a rationale_id attached instead of overwhelming the precision column of a row whose name a reader will shorten to 'Cisco'.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers, Cisco adapter author (no disclosed tie to Cisco Systems)"
+    }
+  ]
+}

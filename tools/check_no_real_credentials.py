@@ -34,7 +34,14 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("stripe_key", re.compile(r"\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b")),
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9]{32,}\b")),
     ("google_api_key", re.compile(r"\bAIza[A-Za-z0-9_\-]{35}\b")),
-    ("private_key_block", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----")),
+    # The header alone is not a secret -- it appears in prose, in scanner rule
+    # descriptions, and in documentation explaining what a detector matches. A
+    # leaked key always carries its base64 body, so require one. Matching the
+    # bare header instead produced false alarms on a mapping file that quoted
+    # it, and the fix for a false alarm must never be to stop scanning a file.
+    ("private_key_block",
+     re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----"
+                r"[\r\n\s]+[A-Za-z0-9+/=]{40,}")),
     ("jwt", re.compile(r"\beyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b")),
     ("aws_secret_like", re.compile(r"\b(?i:aws_secret_access_key)\b\s*[:=]\s*['\"]([^'\"]{30,})['\"]")),
 ]

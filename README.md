@@ -68,7 +68,7 @@ Ten attack classes across a Python corpus, in two stages:
 | Stage | Classes |
 | --- | --- |
 | **Static** — source tree and packaging metadata | A1 tool-description injection, A2 rug-pull, A3 cross-server shadowing, A7 hardcoded secrets, A8 unrestricted file read, A9 unrestricted env access, A10 command execution / allowlist bypass |
-| **Runtime** — a live endpoint the scanner may exercise | A2 rug-pull, A4 response injection, A5 argument exfiltration, A6 authless endpoint |
+| **Runtime** — a live endpoint the scanner may exercise | A1 tool-description injection, A2 rug-pull, A3 cross-server shadowing, A4 response injection, A5 argument exfiltration, A6 authless endpoint |
 
 The runtime classes carry the project. A4, A5, and A6 are structurally
 unreachable by static analysis, and they are where this benchmark says something

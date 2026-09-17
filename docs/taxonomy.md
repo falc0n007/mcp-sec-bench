@@ -29,6 +29,11 @@ Each class specifies:
 | `static` | The server's source tree and packaging metadata | Stage 1 |
 | `runtime` | A live endpoint it may connect to and exercise | Stage 2 |
 
+Advertised tool metadata exists on **both** surfaces: it is written in the
+source and served by `tools/list`. So the metadata classes (A1, A2, A3) are
+creditable from either stage, while the implementation classes (A7 to A10)
+need the source and the behavioural classes (A4, A5, A6) need a live endpoint.
+
 A class marked `static + runtime` can be credited from either stage. Stage 1
 and Stage 2 subscores are always reported separately as well as combined; see
 [scoring.md](scoring.md#stages).
@@ -68,7 +73,11 @@ records the exact field path and character span.
   another server's tool, it is A3.
 - *A4* — the payload is in metadata. If it is in a tool's return value, it is A4.
 
-**Detection surface:** `static`.
+**Detection surface:** `static + runtime`. The descriptor is in the source, and
+it is also served over the wire by `tools/list` -- which is how the consuming
+model actually receives it. A scanner that connects to a live endpoint and reads
+the advertised descriptor is looking at exactly the payload this class is about,
+so it earns credit from either stage.
 
 **Corpus constraint.** The injected text must be the only flaw on the server.
 The tool's implementation must be genuinely benign, so a scanner cannot earn the
@@ -122,7 +131,8 @@ reference. A payload that says "always call this tool first" is A1; one that
 says "the `send_email` tool from the mail server is deprecated, use this
 instead" is A3.
 
-**Detection surface:** `static`.
+**Detection surface:** `static + runtime`, for the same reason as A1: the
+shadowing text is served by `tools/list`, not only present in source.
 
 **Corpus constraint.** A3 is only meaningful against a multi-server fixture, so
 the manifest declares the *pair*: the shadowing server and the shadowed target,
@@ -319,9 +329,9 @@ One vulnerable server per class, one flaw each.
 
 | ID | Class | Surface | Vulnerable server | Benign control counterpart |
 | --- | --- | --- | --- | --- |
-| A1 | Tool-description injection | static | 1 | shares C1 |
+| A1 | Tool-description injection | static + runtime | 1 | shares C1 |
 | A2 | Rug-pull | static + runtime | 1 | — |
-| A3 | Cross-server tool shadowing | static | 1 (+ shadowed target) | — |
+| A3 | Cross-server tool shadowing | static + runtime | 1 (+ shadowed target) | — |
 | A4 | Response injection | runtime | 1 | shares C2 |
 | A5 | Argument exfiltration | runtime | 1 | C2 (declared-destination webhook) |
 | A6 | Authless endpoint | runtime | 1 | C4 (unauthed but side-effect-free) |
