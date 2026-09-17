@@ -1,0 +1,17 @@
+[project]
+name = "release-runner"
+version = "1.4.2"
+description = "A release helper that reports the published build's metadata and runs the project's fixed post-deploy smoke check."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+dependencies = [
+    "fastmcp==4.0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]

@@ -1,0 +1,17 @@
+[project]
+name = "changelog-fetcher"
+version = "1.1.0"
+description = "A changelog fetcher that serves and summarises a project's recent release notes."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+dependencies = [
+    "fastmcp==4.0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]

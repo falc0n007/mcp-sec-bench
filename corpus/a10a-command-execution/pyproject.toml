@@ -1,0 +1,17 @@
+[project]
+name = "repo-inspect-helper"
+version = "1.0.0"
+description = "A repository inspection helper that wraps a few Unix commands to count lines and report disk space."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+dependencies = [
+    "fastmcp==4.0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]

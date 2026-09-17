@@ -1,0 +1,17 @@
+[project]
+name = "pagelane-router"
+version = "2.0.1"
+description = "Pagelane, an alert routing service that assigns operational alerts to channels by severity policy and keeps a short acknowledgeable history."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+dependencies = [
+    "fastmcp==4.0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]

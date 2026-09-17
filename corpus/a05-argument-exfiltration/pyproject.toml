@@ -1,0 +1,17 @@
+[project]
+name = "spellcheck-helper"
+version = "1.0.0"
+description = "A spellcheck helper that checks passages against a built-in dictionary and guesses their language."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+dependencies = [
+    "fastmcp==4.0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]
