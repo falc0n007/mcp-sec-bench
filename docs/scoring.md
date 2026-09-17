@@ -40,7 +40,7 @@ For each item, and each mapped finding:
 | **True positive** | A mapped finding whose `(server, class)` matches a declared item. |
 | **False negative** | A declared item with no matching mapped finding. |
 | **False positive** | A mapped finding whose `(server, class)` is not declared and is not tolerated. |
-| **Near miss** | A mapped finding on the right server, wrong class, where that server *does* declare some class. Scored as a false positive on the reported class and a false negative on the declared one — and additionally logged. |
+| **Near miss** | A mapped finding on the right server, wrong class, where that server *does* declare some class. Scored as a false positive on the reported class, logged in its own counter, and earning no credit. The declared class is then scored by the ordinary rules: a false negative if nothing found it, a true positive if something did. An item has exactly one outcome, so a near miss never *forces* one. |
 | **Tolerated** | A mapped finding matching an entry in the server's tolerated set. Neither TP nor FP. |
 | **Unmapped** | A finding the mapping layer cannot place. Neither TP nor FP. |
 | **Not applicable** | A class the server cannot structurally exhibit. Excluded from that server's denominator entirely. |
@@ -58,6 +58,29 @@ scanner taxonomies are mutually disjoint cannot also award credit for
 approximately-right classification without measuring its own mapping generosity
 instead of the tools. Deciding this before results exist is what makes it
 defensible.
+
+#### A known weakness in this counter
+
+As defined above, *any* wrong class on a server that declares something counts
+as a near miss. That makes the counter trivially inflatable: a scanner that
+reports every class on every server earns a near miss on almost every server in
+the corpus. Measured against the `overflagger` fixture, which does exactly
+that, the rule yields 99 near misses alongside 137 false positives and a
+precision of 0.07.
+
+So a large near-miss count is **not** evidence of near-competence, and this
+project will not present it as such:
+
+- `near_miss` is never published without the false-positive count beside it.
+  Read together the inflation is self-evident; read alone it is misleading.
+- No scoreboard text describes a near miss as "almost right".
+
+Narrowing the definition -- requiring the finding to localise to the declared
+flaw, or requiring the scanner to have been selective on that server -- would
+make the counter mean what its name suggests. That is a change to a published
+metric's definition, so it goes through the amendment process in
+[governance.md](governance.md#amending-this-policy) rather than being decided
+here. Logged as an open question in [decisions.md](decisions.md).
 
 ### Tolerated findings
 

@@ -1,0 +1,228 @@
+{
+  "schema_version": "1.0",
+  "scanner_id": "example-scanner",
+  "display_name": "Example Scanner (NOT A REAL TOOL)",
+  "scanner_versions": ["0.0.0-illustrative"],
+  "adapter_version": "0.0.0-illustrative",
+  "label_provenance": "illustrative-placeholder",
+  "provenance_note": "Every raw_label in this file is INVENTED for documentation. No scanner emits these strings; each is prefixed EXAMPLE_ so it can never be confused with a captured vocabulary. Real tables land only after an adapter has run the tool and its raw output is committed under runner/adapters/. The loader refuses to score with this file unless allow_illustrative is passed explicitly.",
+  "label_source_field": "findings[].rule_id (illustrative)",
+  "frozen_for_corpus_version": null,
+  "matching": {
+    "case_insensitive": false,
+    "strip_surrounding_whitespace": false,
+    "note": "Byte-exact, the default. A real table turns a flag on only with an observed instability recorded here."
+  },
+  "notes": [
+    "This file exists to show the SHAPE of a mapping table and the four cases that matter: a clean 1:1 map, a label that spans two of our classes, a label deliberately left unmapped, and a disputed entry carrying both positions.",
+    "Read docs/mapping-rationale.md for the decision procedure the rationale text refers to (R1-R6)."
+  ],
+  "entries": [
+    {
+      "raw_label": "EXAMPLE_PATH_TRAVERSAL_TOOL_ARG",
+      "label_note": "Illustrative. Stands for a rule that reports a tool parameter reaching a filesystem read without containment.",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A8",
+      "taxonomy_evidence": {
+        "present_when_quote": "a caller-supplied value reaches a read operation and either no containment check exists, or the check is bypassable by traversal, absolute path, or symlink",
+        "why_satisfied": "The label names exactly that property: a caller-controlled tool argument flowing to a read with no root containment. The class and the rule describe the same fact, so no interpretation is interposed between them."
+      },
+      "rationale_id": "MR-example-scanner-001",
+      "rationale": "The clean case. The scanner's rule and A8 are about the same property, the rule fires on nothing else, and no other class's present-when test is satisfied by what the rule reports. R1 alone decides it. An entry like this needs no tie-break and should be marked high confidence; if a mapping table is mostly entries like this one, the disjointness claim at the centre of this project is weaker than we believe, and that is worth saying out loud.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)"
+    },
+
+    {
+      "raw_label": "EXAMPLE_PROMPT_INJECTION",
+      "label_note": "Illustrative. Stands for a single coarse label a scanner uses for any instruction-bearing text it finds, whether in tool metadata or in data the server returns.",
+      "applies_to_stage": "static",
+      "decision": "map",
+      "mapped_class": "A1",
+      "taxonomy_evidence": {
+        "present_when_quote": "a field in the tool descriptor contains natural-language content that does at least one of: issues an instruction to the agent, asserts priority over other instructions, directs concealment from the user, or specifies conditions under which the agent should act differently",
+        "why_satisfied": "In the static stage the scanner has only the source tree and packaging metadata, so an instruction-bearing string it reports is one it read out of a tool descriptor in source. That is the A1 test."
+      },
+      "considered_classes": [
+        {
+          "class": "A4",
+          "why_rejected": "A4 is instruction-bearing content in a tool's RETURN VALUE. The corpus constraint on A4 keeps the payload in a fixture file rather than a source literal, so a static finding is normally a descriptor finding -- but see the caveat in the rationale, because a scanner that walks data files can legitimately earn A4 statically."
+        },
+        {
+          "class": "A3",
+          "why_rejected": "A3 requires the payload to reference a tool or server OTHER than itself. A label this coarse asserts nothing about a cross-server reference, so nothing in the finding satisfies the A3 test."
+        }
+      ],
+      "resolution_rules": ["R1", "R3", "R6"],
+      "rationale_id": "MR-example-scanner-002",
+      "rationale": "This is the spanning case and the most contestable shape in any real table. One vendor label covers what our taxonomy splits into A1 (payload in metadata) and A4 (payload in a return value). We resolve it under R3: the split is made on the STAGE that produced the finding, which the runner records as a hard fact, and never on the wording of the finding message, which would be an unreviewable substring rule. This entry is the static half; MR-example-scanner-003 is the runtime half. Known weakness, recorded rather than hidden: taxonomy.md explicitly allows A4 credit to a scanner that walks non-source data files, and such a finding arrives in the static stage and would be scored A1 here -- a near miss on a04 and a false positive. If a real scanner does this we take the false positive rather than sniffing the finding's file path, because the alternative is a content heuristic no reviewer can check. If a vendor contests it, the dispute is legitimate and this paragraph is the argument they get to attack.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "accepted",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)"
+    },
+
+    {
+      "raw_label": "EXAMPLE_PROMPT_INJECTION",
+      "label_note": "Illustrative. Same label, runtime half of the R3 stage split.",
+      "applies_to_stage": "runtime",
+      "decision": "map",
+      "mapped_class": "A4",
+      "taxonomy_evidence": {
+        "present_when_quote": "a tool call with manifest-specified arguments returns content that would qualify as an instruction to the agent under the A1 test",
+        "why_satisfied": "In the runtime stage the scanner reaches the server by calling it, so instruction-bearing content it reports is content that came back from a call. That is the A4 test."
+      },
+      "considered_classes": [
+        {
+          "class": "A1",
+          "why_rejected": "A1 is metadata. A runtime finding could in principle be a descriptor read from tools/list rather than a return value, which is why this entry is medium confidence rather than high."
+        },
+        {
+          "class": "A2",
+          "why_rejected": "A2 requires a descriptor to CHANGE between two points in the server's lifecycle. A single instruction-bearing observation asserts no change, so the A2 test is not satisfied."
+        }
+      ],
+      "resolution_rules": ["R1", "R3", "R6"],
+      "rationale_id": "MR-example-scanner-003",
+      "rationale": "The runtime half of the split described in MR-example-scanner-002. A runtime scanner that reports instruction-bearing text after exercising the server has most plausibly read it out of a tool result, which is A4. The residual risk is the mirror of the static half: a runtime scanner that flags a poisoned tools/list descriptor would be scored A4 here and score a near miss on the A1 server. We accept the symmetric error rather than inventing a discriminator over finding text. Two entries may share a raw label only when their stage scopes are disjoint, as here; the loader rejects any other duplicate.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "accepted",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)"
+    },
+
+    {
+      "raw_label": "EXAMPLE_UNSAFE_SHELL_CALL",
+      "label_note": "Illustrative. Stands for a rule reporting caller-influenced input reaching a shell or exec call.",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A10",
+      "taxonomy_evidence": {
+        "present_when_quote": "the manifest records a caller-reachable execution sink and, for A10b, a concrete bypass string that escapes the intended command set",
+        "why_satisfied": "The rule reports caller-influenced input reaching process execution, which is the A10 sink. taxonomy.md credits A10 at class level whether or not the scanner articulates the allowlist bypass, so both corpus variants are covered by this one entry."
+      },
+      "considered_classes": [
+        {
+          "class": "A8",
+          "why_rejected": "A8's own 'Not this class' clause settles it: if the read happens via a subprocess, it is A10 and not A8. The narrower distinguishing feature -- a process is executed -- is present, so the more specific class wins under R2."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-example-scanner-004",
+      "rationale": "The second spanning shape: two classes are plausible but the taxonomy's own 'Not this class' clause distinguishes them, so R2 decides without needing a stage split. A rule that reports 'cat /etc/passwd' reaching subprocess could look like file disclosure, but A8 disclaims it in one line. Citing the disclaimer rather than our own reasoning is what makes this entry cheap to review: a reader checks the quote against taxonomy.md and is done.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)"
+    },
+
+    {
+      "raw_label": "EXAMPLE_OUTDATED_DEPENDENCY",
+      "label_note": "Illustrative. Stands for a dependency-CVE check that ships in the same tool as the MCP-specific rules.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "outside-taxonomy-scope",
+      "rationale_id": "MR-example-scanner-005",
+      "rationale": "A real, useful finding that our taxonomy does not define. taxonomy.md's scope boundary excludes generic application security findings with no MCP-specific surface, and a vulnerable transitive dependency is exactly that. Under R4 we leave it unmapped rather than forcing it into the nearest class. Per docs/scoring.md an unmapped finding is neither a true positive nor a false positive, so this decision costs the scanner nothing -- it is not a penalty and must never be reported as one. It does cost US something: an accumulation of entries like this one is evidence that the taxonomy is too narrow for what the category actually ships, and that is a taxonomy amendment under governance.md, not a scanner deficiency.",
+      "confidence": "high",
+      "dispute_risk": "low",
+      "status": "accepted",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)"
+    },
+
+    {
+      "raw_label": "EXAMPLE_SUSPICIOUS_TOOL",
+      "label_note": "Illustrative. Stands for a catch-all label an LLM-as-judge engine emits with the specifics only in free-text prose.",
+      "applies_to_stage": "any",
+      "decision": "unmapped",
+      "mapped_class": null,
+      "unmapped_reason": "no-defensible-single-class",
+      "considered_classes": [
+        {
+          "class": "A1",
+          "why_rejected": "Plausible, but nothing in the label itself asserts that the content sits in a tool descriptor. Choosing A1 would be choosing a class because the corpus happens to contain one, which is R5's prohibition."
+        },
+        {
+          "class": "A9",
+          "why_rejected": "Equally plausible and equally unsupported by the label. When two classes are exactly as well supported as each other by the evidence the label carries, the evidence does not distinguish them."
+        }
+      ],
+      "resolution_rules": ["R4", "R5"],
+      "rationale_id": "MR-example-scanner-006",
+      "rationale": "The deliberately hard case. This label is real and often correct, but it carries no evidence that satisfies any one present-when test, and the discriminating detail lives in a free-text message. Mapping it by reading that prose would make the scanner's score depend on our reading comprehension rather than its detection, and mapping it to whichever class makes the tool look best is the precise failure this project exists to avoid. So: unmapped, visibly, with the cost stated. The scanner loses nothing on precision and the item it may genuinely have found stays a false negative; that asymmetry is real and is disclosed to the vendor before publication. If the tool later exposes a structured category field alongside the prose, the adapter changes which field feeds raw_label, this entry is superseded, and the change is logged in history.",
+      "confidence": "low",
+      "dispute_risk": "high",
+      "status": "provisional",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)"
+    },
+
+    {
+      "raw_label": "EXAMPLE_ENV_VAR_DISCLOSURE",
+      "label_note": "Illustrative. Stands for a rule reporting a tool that returns process environment values to its caller.",
+      "applies_to_stage": "any",
+      "decision": "map",
+      "mapped_class": "A9",
+      "taxonomy_evidence": {
+        "present_when_quote": "a tool returns environment values selected by caller input, or returns the environment block wholesale",
+        "why_satisfied": "The rule reports the leak channel itself -- a tool handing environment contents to the caller -- which is the A9 test, and A9 states it is a finding even when the environment happens to be empty at scan time."
+      },
+      "considered_classes": [
+        {
+          "class": "A7",
+          "why_rejected": "A7 is a credential literal IN the code. A9's 'Not this class' clause draws the line at the secret's origin: A7 is the secret in the source, A9 is the channel that leaks secrets from the environment. This rule reports the channel."
+        }
+      ],
+      "resolution_rules": ["R1", "R2"],
+      "rationale_id": "MR-example-scanner-007",
+      "rationale": "Our position: the class is decided by what the rule reports, which is the disclosure channel, not by what happens to be in the environment when the scan runs. A9's Not-this-class clause is explicit that the distinguishing feature is origin, and reads on the side of the channel.",
+      "confidence": "medium",
+      "dispute_risk": "high",
+      "status": "disputed",
+      "illustrative": true,
+      "decided_on": "2026-09-17",
+      "decided_by": "mcp-sec-bench maintainers (illustrative entry)",
+      "reviewed_by": ["second maintainer, no disclosed tie to this vendor (illustrative)"],
+      "dispute": {
+        "raised_by": "Example Scanner maintainers (illustrative)",
+        "opened_on": "2026-09-17",
+        "forum": "https://github.com/mcp-sec-bench/mcp-sec-bench/issues/ILLUSTRATIVE",
+        "vendor_position": "The rule fires on the credential-bearing consequence, not on the channel: it is tuned to report when a tool can hand a SECRET to a caller, and the engine will not fire on a tool that returns non-sensitive environment values. Scoring it as A9 undercounts the tool on the A7 server, where it fires on exactly the property A7 describes, and the benchmark's A9-versus-A7 line is finer than any shipping scanner's vocabulary draws it.",
+        "vendor_proposed_class": "A7",
+        "our_position": "We are not persuaded, and we say why rather than asserting authority. A7's present-when test requires a credential-shaped LITERAL in source or committed configuration; this rule reports no literal and fires on servers whose source contains none. The vendor's reading would credit the rule on a server whose flaw is a hardcoded literal it never examined, which would make the A7 column measure something other than what taxonomy.md defines. We accept the vendor's point that the A7/A9 line is finer than shipping vocabularies draw, and we note that as evidence for a future taxonomy amendment rather than as a reason to move this entry now. Both readings are published on the scoreboard row.",
+        "outcome": "both-positions-published",
+        "resolved_on": "2026-09-17",
+        "scoreboard_note": "Mapping disputed: we map this label to A9 (leak channel); the vendor maps it to A7 (credential exposure). Under the vendor's reading this tool gains the A7 item on a07 and loses the A9 item on a09. Both positions published per governance.md.",
+        "affected_items": [
+          "a09-unrestricted-env-access/A9",
+          "a07-hardcoded-secrets/A7"
+        ],
+        "redisclosure_sent_on": "2026-09-17"
+      },
+      "history": [
+        {
+          "changed_on": "2026-09-17",
+          "from_class": "A9",
+          "to_class": "A9",
+          "reason": "Contested by the vendor; reviewed in public; mapping unchanged and the vendor's position recorded alongside ours. No score moved, so no corpus version bump was required -- the dispute record is the change.",
+          "governance_ref": "governance.md#contesting-a-result"
+        }
+      ]
+    }
+  ]
+}

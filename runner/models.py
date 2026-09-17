@@ -88,6 +88,10 @@ class RawFinding:
     line: int | None = None
     message: str = ""
     severity: str | None = None
+    #: Which stage produced this finding, when the adapter knows. Matters for
+    #: A2, which is creditable from either stage: without it, a finding on a
+    #: dual-surface class has to have its stage guessed.
+    stage: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 

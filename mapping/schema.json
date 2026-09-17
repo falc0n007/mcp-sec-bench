@@ -1,0 +1,384 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mcp-sec-bench/mapping/schema.json",
+  "title": "mcp-sec-bench scanner label mapping",
+  "description": "One file per scanner. Maps that scanner's own output vocabulary onto the classes in docs/taxonomy.md, or records an explicit refusal to map. Every entry is a judgment call that a vendor may contest under docs/governance.md#contesting-a-result, so every entry carries its reasoning, its author, its date, and -- when contested -- both positions.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "scanner_id",
+    "display_name",
+    "label_provenance",
+    "label_source_field",
+    "matching",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0" },
+
+    "scanner_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Must equal the adapter's scanner_id and the scoreboard row key."
+    },
+
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Vendor/product name as the vendor writes it."
+    },
+
+    "scanner_versions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Scanner versions whose output vocabulary this file was checked against. A label table is only as valid as the versions it was read from."
+    },
+
+    "adapter_version": {
+      "type": "string",
+      "description": "Adapter version whose RawFinding.raw_label this table is keyed on. Changing which field the adapter puts in raw_label invalidates this table."
+    },
+
+    "label_provenance": {
+      "enum": ["captured-from-real-output", "illustrative-placeholder", "unverified"],
+      "description": "captured-from-real-output: every raw_label below was copied verbatim from output this project actually produced, and the capture is committed. illustrative-placeholder: the labels are invented to demonstrate the format and MUST NOT be used to score anything. unverified: labels taken from vendor docs or a third party but not yet observed in output we ran."
+    },
+
+    "provenance_note": {
+      "type": "string",
+      "description": "Where the labels came from: the committed raw-output path, the docs URL, or the reason they are still placeholders."
+    },
+
+    "label_source_field": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which field of the scanner's output the adapter copies into RawFinding.raw_label (e.g. 'rule_id', 'check.name', 'category'). Reviewers cannot check a mapping without knowing what was matched on."
+    },
+
+    "frozen_for_corpus_version": {
+      "type": ["string", "null"],
+      "description": "The corpus_version this table was frozen against before a scoring run, per docs/scoring.md. Null while the table is still being drafted."
+    },
+
+    "matching": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_insensitive", "strip_surrounding_whitespace"],
+      "description": "The ONLY normalization the mapping layer may apply. Both default to false, i.e. byte-exact matching. Nothing else is permitted: fuzzy, stemmed, or substring matching would make a table unreviewable and would let the mapping layer manufacture credit.",
+      "properties": {
+        "case_insensitive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Unicode casefold both sides before comparing. Only set true for a scanner whose output genuinely varies in case between runs or versions; say so in `note`."
+        },
+        "strip_surrounding_whitespace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strip leading/trailing whitespace from the observed label before comparing. Interior whitespace is never touched."
+        },
+        "note": {
+          "type": "string",
+          "description": "Required in review practice whenever either flag is true: the observed instability that justifies it."
+        }
+      }
+    },
+
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "File-level remarks: vocabulary quirks, engines whose labels are not covered, known gaps."
+    },
+
+    "entries": {
+      "type": "array",
+      "description": "One entry per raw label. Entries are keyed on (raw_label, applies_to_stage); duplicates are a load error.",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {
+        "properties": { "label_provenance": { "const": "illustrative-placeholder" } },
+        "required": ["label_provenance"]
+      },
+      "then": {
+        "properties": {
+          "entries": {
+            "items": {
+              "required": ["illustrative"],
+              "properties": { "illustrative": { "const": true } }
+            }
+          }
+        },
+        "description": "A placeholder file must mark every entry illustrative, so no real run can be scored against invented labels by accident."
+      }
+    }
+  ],
+
+  "$defs": {
+    "attack_class": {
+      "enum": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"],
+      "description": "A class in docs/taxonomy.md."
+    },
+
+    "rationale_id": {
+      "type": "string",
+      "pattern": "^MR-[a-z0-9][a-z0-9-]*-[0-9]{3}$",
+      "description": "Stable identifier, convention MR-<scanner_id>-<NNN>. Written into every MappedFinding and into results JSON as mapping_rationale_id, and cited in docs/mapping-rationale.md. Never reused, never renumbered: a published number points at it."
+    },
+
+    "iso_date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_label",
+        "decision",
+        "rationale_id",
+        "rationale",
+        "confidence",
+        "decided_on",
+        "decided_by"
+      ],
+      "dependentRequired": {
+        "considered_classes": ["resolution_rules"]
+      },
+      "properties": {
+        "raw_label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The scanner's label, VERBATIM, exactly as it appears in the field named by label_source_field. Never cleaned up, never re-cased, never re-spaced."
+        },
+
+        "label_note": {
+          "type": "string",
+          "description": "What the scanner means by this label, in the vendor's own terms where they document it."
+        },
+
+        "applies_to_stage": {
+          "enum": ["any", "static", "runtime"],
+          "default": "any",
+          "description": "Scope the entry to findings produced in one stage. The ONLY permitted way to give a single raw label two different mappings, because stage is a hard fact the runner records rather than a judgment about the finding's text. Used when a scanner's one label covers a metadata payload found by source scanning (A1) and a return-value payload found by exercising the server (A4). Two entries sharing a raw_label must have disjoint stage scopes."
+        },
+
+        "decision": {
+          "enum": ["map", "unmapped"],
+          "description": "Explicit, so that 'no class' is always a recorded decision and never a missing field. `unmapped` costs the scanner nothing (docs/scoring.md#normalization)."
+        },
+
+        "mapped_class": {
+          "oneOf": [{ "$ref": "#/$defs/attack_class" }, { "type": "null" }],
+          "description": "The class this label is credited as. Null exactly when decision is `unmapped`."
+        },
+
+        "unmapped_reason": {
+          "enum": [
+            "outside-taxonomy-scope",
+            "not-mcp-specific",
+            "host-or-agent-side",
+            "insufficient-specificity",
+            "informational-only",
+            "no-defensible-single-class",
+            "pending-review",
+            "other"
+          ],
+          "description": "Why we decline to map. `insufficient-specificity` and `no-defensible-single-class` are the honest answers when a label is real but too coarse to place; they are a finding about OUR taxonomy, not about the scanner."
+        },
+
+        "taxonomy_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present_when_quote", "why_satisfied"],
+          "description": "Required for every `map` decision. A mapping is only defensible if it cites the class's present-when test in docs/taxonomy.md and says how the scanner's label satisfies it.",
+          "properties": {
+            "present_when_quote": {
+              "type": "string",
+              "minLength": 20,
+              "description": "The present-when text from docs/taxonomy.md for mapped_class, quoted."
+            },
+            "why_satisfied": {
+              "type": "string",
+              "minLength": 20,
+              "description": "How what this label reports satisfies that test."
+            }
+          }
+        },
+
+        "considered_classes": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Every other class whose present-when test this label plausibly satisfies, and why it lost. Present on any label that spans classes -- the spanning is the interesting part and must not be hidden by a single-line table row.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["class", "why_rejected"],
+            "properties": {
+              "class": { "$ref": "#/$defs/attack_class" },
+              "why_rejected": { "type": "string", "minLength": 20 }
+            }
+          }
+        },
+
+        "resolution_rules": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Which rules of the decision procedure in docs/mapping-rationale.md were applied. Required whenever considered_classes is present.",
+          "items": { "enum": ["R1", "R2", "R3", "R4", "R5", "R6"] }
+        },
+
+        "rationale_id": { "$ref": "#/$defs/rationale_id" },
+
+        "rationale": {
+          "type": "string",
+          "minLength": 40,
+          "description": "The prose a disputing vendor argues with. Written to be read by someone who disagrees."
+        },
+
+        "confidence": {
+          "enum": ["high", "medium", "low"],
+          "description": "high: the label and the class name the same property. medium: a defensible reading with a rejected alternative. low: we picked one of several readings and expect to be argued with."
+        },
+
+        "dispute_risk": {
+          "enum": ["low", "medium", "high"],
+          "description": "Our own estimate of how likely this entry is to be contested. Published, so the invitation to contest is not buried."
+        },
+
+        "status": {
+          "enum": ["accepted", "provisional", "disputed", "withdrawn"],
+          "default": "accepted",
+          "description": "provisional: drafted before the label was seen in real output. disputed: contested under governance.md and not resolved in our favour by agreement. withdrawn: superseded; kept because published results are never silently edited."
+        },
+
+        "illustrative": {
+          "type": "boolean",
+          "default": false,
+          "description": "True means this label is INVENTED to demonstrate the format. The loader refuses to score with it unless explicitly asked to."
+        },
+
+        "decided_on": { "$ref": "#/$defs/iso_date" },
+        "decided_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who made the call. A maintainer with a disclosed tie to this scanner must recuse (governance.md#conflicts-of-interest)."
+        },
+        "reviewed_by": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+
+        "dispute": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raised_by", "opened_on", "vendor_position", "our_position", "outcome"],
+          "description": "The both-positions record required by governance.md#contesting-a-result. When we are not persuaded, the vendor's position is published on the scoreboard row beside ours rather than replaced by our resolution of it.",
+          "properties": {
+            "raised_by": { "type": "string", "minLength": 1 },
+            "opened_on": { "$ref": "#/$defs/iso_date" },
+            "forum": {
+              "type": "string",
+              "description": "Public issue or PR reference. Disputes are never resolved privately."
+            },
+            "vendor_position": {
+              "type": "string",
+              "minLength": 40,
+              "description": "The disputing party's argument, in their words, unedited except for length."
+            },
+            "vendor_proposed_class": {
+              "oneOf": [{ "$ref": "#/$defs/attack_class" }, { "type": "null" }],
+              "description": "The class they say this label should map to; null if they say it should be unmapped."
+            },
+            "our_position": {
+              "type": "string",
+              "minLength": 40,
+              "description": "Why we hold the mapping, answering their argument rather than restating ours."
+            },
+            "outcome": {
+              "enum": ["open", "mapping-changed", "both-positions-published"],
+              "description": "mapping-changed: we were persuaded; the entry above already reflects their reading and history records the change. both-positions-published: we were not persuaded; both readings go on the scoreboard row."
+            },
+            "resolved_on": { "$ref": "#/$defs/iso_date" },
+            "scoreboard_note": {
+              "type": "string",
+              "maxLength": 400,
+              "description": "The short both-positions text rendered on the scoreboard row."
+            },
+            "affected_items": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "server/class items whose outcome changes if the vendor's reading is applied. Makes the stake of the dispute concrete."
+            },
+            "redisclosure_sent_on": {
+              "$ref": "#/$defs/iso_date",
+              "description": "A mapping change affecting a published score triggers re-disclosure (governance.md#disclosure-before-publication)."
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": { "outcome": { "const": "both-positions-published" } },
+                "required": ["outcome"]
+              },
+              "then": { "required": ["scoreboard_note", "resolved_on"] }
+            }
+          ]
+        },
+
+        "history": {
+          "type": "array",
+          "description": "Every change to this entry after it was first published. Published results are never silently edited.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["changed_on", "reason"],
+            "properties": {
+              "changed_on": { "$ref": "#/$defs/iso_date" },
+              "from_class": { "oneOf": [{ "$ref": "#/$defs/attack_class" }, { "type": "null" }] },
+              "to_class": { "oneOf": [{ "$ref": "#/$defs/attack_class" }, { "type": "null" }] },
+              "reason": { "type": "string", "minLength": 20 },
+              "governance_ref": { "type": "string" },
+              "corpus_version_bumped_to": { "type": "string" }
+            }
+          }
+        }
+      },
+
+      "allOf": [
+        {
+          "if": {
+            "properties": { "decision": { "const": "map" } },
+            "required": ["decision"]
+          },
+          "then": {
+            "required": ["mapped_class", "taxonomy_evidence"],
+            "properties": { "mapped_class": { "$ref": "#/$defs/attack_class" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "decision": { "const": "unmapped" } },
+            "required": ["decision"]
+          },
+          "then": {
+            "required": ["unmapped_reason"],
+            "properties": { "mapped_class": { "type": "null" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "disputed" } },
+            "required": ["status"]
+          },
+          "then": { "required": ["dispute"] }
+        }
+      ]
+    }
+  }
+}

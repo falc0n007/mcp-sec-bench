@@ -27,6 +27,8 @@ the people who made it. Append; do not rewrite.
 | 2026-09-17 | Exactly one tolerated finding corpus-wide | `c03-release-runner` tolerates A7 for its high-entropy build-artifact digest, which is genuinely ambiguous. Every other suspicious-looking pattern in the controls -- the correctly-rooted file read, the allowlisted env read, the fixed command, the placeholder token -- is scored as a false positive when flagged. Each tolerated entry is a hole in the benchmark's ability to punish over-flagging, so the list is kept at the minimum that honesty requires, and adding to it is a governance amendment rather than a code change. |
 | 2026-09-17 | Corpus dependencies pinned in the lab image | `fastmcp==4.0.4` and `httpx==0.28.1`. A corpus version has to rebuild identically or a score is not comparable to itself, let alone across scanners. |
 | 2026-09-17 | A6 `not_applicable` is enumerated, not derived from whatever a manifest declares | Two servers had declared an empty `sensitive_tools`, which marked them `not_applicable` for A6 and removed them from that denominator -- a free pass for a scanner that over-flags A6, with the same effect as an unauthorised tolerated entry. An authenticated HTTP server with real tools is a true negative for A6 (it could have been authless and is not), not structurally incapable of it. Only `c04-status-service` may sit outside the denominator, because being unauthenticated with no sensitive capability is the entire point of that control. Enforced by `tools/validate_manifests.py` and negative-tested. |
+| 2026-09-17 | Near-miss wording corrected: a near miss never forces a false negative | As written the rule said a near miss is "scored as a false positive on the reported class and a false negative on the declared one", which contradicts the rule that an item has exactly one outcome and that duplicate findings collapse. If the declared class was separately found it is a true positive and cannot simultaneously be a false negative. Reworded so the false negative arises from the ordinary rule when nothing found the class, rather than being imposed by the near miss. This is a clarification to the only self-consistent reading, not a behaviour change; no results exist. Surfaced by the scoring engine implementation. |
+| 2026-09-17 | RawFinding carries an explicit `stage` | A2 is creditable from either stage, so a finding on a dual-surface class otherwise has its stage guessed. The field replaces a convention of stashing it in the untyped `raw` dict. |
 
 ## Open questions
 
@@ -41,3 +43,15 @@ Carried forward. Resolved entries move into the table above with a date.
   set. Needs a real corpus to reason about; resolve in Phase 1.
 - Whether `unmapped` findings should eventually graduate into new taxonomy
   classes automatically, or only by amendment. Revisit once there is run data.
+- **Should the near-miss counter be narrowed?** As defined, any wrong class on
+  a server that declares something counts, so the counter is trivially
+  inflated: the `overflagger` fixture earns 99 near misses alongside 137 false
+  positives. A large near-miss count is therefore not evidence of
+  near-competence, though its name invites exactly that reading, and a vendor
+  could quote it that way. Narrowing it -- requiring the finding to localise to
+  the declared flaw's file, or requiring the scanner to have been selective on
+  that server -- would make it mean what it says. That changes a published
+  metric's definition, so it needs the amendment process rather than a code
+  change. Until then `near_miss` is never published without the false-positive
+  count beside it, and is never described as "almost right". Resolve before
+  Phase 4.
