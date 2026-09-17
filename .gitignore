@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Runner output
+results/raw/
+results/*.local.json
+.scanner-tokens
+*.env
+!*.env.example
+
+# Held-back corpus (never committed to the public repo)
+corpus/private/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
