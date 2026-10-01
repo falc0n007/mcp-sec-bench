@@ -25,28 +25,43 @@ reader ever finds a scoreboard whose publisher quietly became a competitor.
 
 ---
 
+## Add your scanner
+
+If you maintain an MCP security scanner, or use one that is not measured here,
+you can add it. A submission is an adapter, a pinned Dockerfile, a mapping file
+that states why each of your tool's labels was or was not credited to an attack
+class, and tests. Vendors may submit for their own tool; authorship is disclosed
+on the scoreboard row, and a result for your tool can be disputed after publication like any other.
+
+**[Adding a scanner: the walkthrough](docs/adding-a-scanner.md)**
+
+---
+
 ## Scoreboard
 
-**No scoreboard table is published yet. The disclosure round is running now.**
+The scoreboard is published at **https://falc0n007.github.io/mcp-sec-bench/**, built from a benchmark run on the
+maintainer's machine with `make scoreboard && make publish-site`.
 
-The runner works and produces scores, and early figures appear in this
-repository's commit history. A ranked scoreboard is not published here until
-[the disclosure round](docs/disclosure.md) closes.
+Rows are alphabetical, never ranked, and per-class recall is the primary
+number. Each page carries the corpus version and the date of the run behind it.
 
-**A deviation from our own policy, recorded rather than left to be discovered.**
-[governance.md](docs/governance.md#disclosure-before-publication) commits to
-every scanner's maintainers receiving their full results, the methodology, and
-the exact mapping decisions applied to their tool, with 14 days to respond,
-*before* anyone else sees a number. This repository was made public with
-preliminary figures already in its history, so for the first round that
-ordering was not honoured. The round is being run immediately rather than
-retroactively justified, corrections will be folded in, and the deviation is
-logged in [decisions.md](docs/decisions.md).
+**No pre-publication review.** [governance.md](docs/governance.md#publication-and-right-of-reply)
+originally committed to showing every scanner's maintainers their results for
+14 days before publication. That round was not run: on 2026-09-30 the project
+owner decided to publish directly, and no maintainers or companies have been
+contacted. The decision, including that it was made without the public comment
+period the policy itself prescribes, is logged in
+[decisions.md](docs/decisions.md). The cost falls on the tools measured: a
+vendor sees its numbers when everyone else does, and an error in our setup is
+caught after publication rather than before.
 
-If you maintain a scanner measured here and are reading this before hearing
-from us, that is the failure this note is admitting to. The methodology,
-the mapping decisions, and the dispute process are all in this repository, and
-a result you can show to be wrong will be corrected.
+**Disputing a result.** Anyone, vendor or not, can contest a published result by
+opening a public issue; see
+[Disputing a published result](CONTRIBUTING.md#disputing-a-published-result) and
+[governance.md](docs/governance.md#contesting-a-result). Corrections are
+published as new dated entries with the original left visible, and a response
+from a scanner's maintainers is published alongside their scores. A result you
+can show to be wrong will be corrected.
 
 What is already public and reviewable is everything the numbers will be
 produced by:
@@ -55,7 +70,7 @@ produced by:
 | --- | --- |
 | [Attack class taxonomy](docs/taxonomy.md) | The 10 classes, defined so that "did the scanner catch it?" has one answer |
 | [Scoring rules](docs/scoring.md) | What counts as a hit, a miss, and a false positive |
-| [Neutrality and governance](docs/governance.md) | Who gets benchmarked, how a vendor contests a result, the disclosure window |
+| [Neutrality and governance](docs/governance.md) | Who gets benchmarked, how a result is contested after publication, the right of reply |
 | [Ethics and scope](docs/ethics.md) | Why a vulnerable-server corpus exists and what constrains it |
 | [Decision log](docs/decisions.md) | Every choice made so far, dated, with reasoning |
 | [Project plan](docs/project-plan.md) | Phases, timeline, and task tracker |
@@ -63,6 +78,7 @@ produced by:
 | [The lab](lab/README.md) | Bringing the sandboxed corpus online, and how egress is contained |
 | [The runner](runner/README.md) | How scanner output becomes a score, and the separations that keep it reviewable |
 | [Mapping rationale](docs/mapping-rationale.md) | Every decision translating a scanner's vocabulary into ours |
+| [Adding a scanner](docs/adding-a-scanner.md) | The eligibility criteria, the adapter contract, the mapping file, the tests, and what happens after you submit |
 | [Scanner survey](docs/scanner-survey.md) | What each candidate scanner actually is, verified by installing and running it |
 
 ## Why this exists
@@ -130,7 +146,7 @@ an honest account of the dual-use tradeoff, is in [ethics.md](docs/ethics.md).
 | 0 — Scope and neutrality design | **Complete** |
 | 1 — Corpus | **Complete** |
 | 2 — Runner and normalization | **Complete** |
-| 3 — Private disclosure round | Next |
+| 3 — Private disclosure round | Skipped (owner decision, 2026-09-30) |
 | 4 — Public launch | Not started |
 
 ## Running it
@@ -148,15 +164,15 @@ make scoreboard # run the benchmark and render the result
 `make scoreboard` writes to `results/local/`, which is gitignored, so a
 development run can never be mistaken for a published score.
 
-Four adapters are wired: three run credential-free, and one is published as
-unavailable because a token gates all of its analysis. A scanner we cannot run
+Five adapters are wired: four run credential-free, and one (Snyk agent-scan) is
+published as unavailable because a token gates all of its analysis. A scanner we cannot run
 still gets a row carrying the reason, because omitting it would quietly turn
 "we could not run this" into "this was not considered".
 
 ## Adding your scanner
 
-The submission path is a Phase 4 deliverable, but the inclusion criteria are
-already fixed and are not negotiated case by case — a scanner is eligible when
+The walkthrough is [docs/adding-a-scanner.md](docs/adding-a-scanner.md). The
+inclusion criteria are fixed and are not negotiated case by case — a scanner is eligible when
 it is reproducibly runnable without a sales call, publicly obtainable,
 containerizable, produces parseable output, and is licensed compatibly with
 having its output published. An account requirement is disclosed, not
@@ -166,9 +182,10 @@ Anyone may submit an adapter, including a vendor for their own tool; vendor
 authorship is disclosed on the scoreboard row. See
 [governance.md](docs/governance.md#which-scanners-are-included).
 
-**Before any result is published, its scanner's maintainers receive their full
-results, the methodology, and the exact mapping decisions applied to their tool,
-with 14 days to respond. Responses are published alongside the scores.**
+**Results are published without pre-publication review by maintainers. A
+published result can be disputed by anyone, and a maintainers' response is
+published alongside the scores.** See
+[governance.md](docs/governance.md#publication-and-right-of-reply).
 
 ## License
 

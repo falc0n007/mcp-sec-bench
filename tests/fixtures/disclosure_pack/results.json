@@ -1,0 +1,236 @@
+{
+  "corpus_version": "v1-synthetic0000",
+  "generated_at": "2026-01-01T00:00:00+00:00",
+  "runs_per_scanner": 1,
+  "scanners": [
+    {
+      "adapter_version": "1.0.0",
+      "config_label": "default",
+      "display_name": "mcp-guard",
+      "findings": [
+        {
+          "file": "server.py",
+          "line": 1,
+          "mapped_class": "A1",
+          "mapped_server": "a01-tool-description-injection",
+          "mapping_rationale_id": "MR-mcp-guard-001",
+          "message": "synthetic",
+          "raw_label": "SYNTH",
+          "run_index": 1,
+          "severity": "high"
+        }
+      ],
+      "items": [
+        {
+          "class": "A1",
+          "finding_ref": "f0",
+          "note": "",
+          "outcome": "true_positive",
+          "run_index": 1,
+          "server": "a01-tool-description-injection",
+          "stage_credited": null
+        }
+      ],
+      "metrics": {
+        "high_variance": false,
+        "near_miss_mean": 0.0,
+        "precision_overall": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "recall_overall": {
+          "max": 1.0,
+          "mean": 1.0,
+          "min": 1.0
+        },
+        "recall_per_class": {
+          "A1": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "A10": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A2": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A3": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A4": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A5": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A6": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A7": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A8": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A9": {
+            "max": null,
+            "mean": null,
+            "min": null
+          }
+        },
+        "unmapped_mean": 0.0,
+        "variance_detail": {
+          "A1": 0.0
+        }
+      },
+      "not_attempted_classes": [
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "notes": [
+        "synthetic fixture entry"
+      ],
+      "requires_signup": false,
+      "runs": 1,
+      "scanner_id": "mcp-guard",
+      "scanner_version": "9.9.9",
+      "stages_attempted": [
+        "static"
+      ]
+    },
+    {
+      "adapter_version": "1.0.0",
+      "config_label": "default",
+      "display_name": "Ramparts",
+      "findings": [],
+      "items": [
+        {
+          "class": "A1",
+          "finding_ref": null,
+          "note": "",
+          "outcome": "false_negative",
+          "run_index": 1,
+          "server": "a01-tool-description-injection",
+          "stage_credited": null
+        }
+      ],
+      "metrics": {
+        "high_variance": false,
+        "near_miss_mean": 0.0,
+        "precision_overall": {
+          "max": null,
+          "mean": null,
+          "min": null
+        },
+        "recall_overall": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0
+        },
+        "recall_per_class": {
+          "A1": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "A10": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A2": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A3": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A4": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A5": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A6": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A7": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A8": {
+            "max": null,
+            "mean": null,
+            "min": null
+          },
+          "A9": {
+            "max": null,
+            "mean": null,
+            "min": null
+          }
+        },
+        "unmapped_mean": 0.0,
+        "variance_detail": {
+          "A1": 0.0
+        }
+      },
+      "not_attempted_classes": [
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10"
+      ],
+      "notes": [
+        "synthetic fixture entry"
+      ],
+      "requires_signup": false,
+      "runs": 1,
+      "scanner_id": "ramparts",
+      "scanner_version": "9.9.9",
+      "stages_attempted": [
+        "static"
+      ]
+    }
+  ],
+  "schema_version": "1.0"
+}
