@@ -14,8 +14,8 @@ unresolved pending a real corpus. There is one now: 11 declared items across 15
 servers (11 vulnerable, 4 controls), one flaw per server.
 
 Without the held-back set, the stated defence against tuning to the benchmark
-is a sentence. The corpus has been public since before the first disclosure
-round, its marker strings (for instance the A4 payload marker) are searchable,
+is a sentence. The corpus has been public since before the first results were
+published, its marker strings (for instance the A4 payload marker) are searchable,
 and its servers are small. A scanner vendor reading the repository could match
 the corpus without detecting the class. This amendment turns the promise into
 numbers and procedure, and says honestly what it cannot do.
@@ -105,8 +105,8 @@ thing a neutral benchmark should not have.
   reconstruct which items were missed and, from that, what the items are.
 - A scanner that does better on the held-back set than on the public set is
   reported identically. A negative gap is information about the public corpus.
-- Held-back results are subject to the same disclosure window and response
-  rights as any other number.
+- Held-back results are subject to the same right of reply and dispute route as
+  any other number.
 
 **Limitation, stated in the policy:** the held-back set is authored by the same
 people, with the same taxonomy, as the public corpus. It detects tuning to
@@ -127,16 +127,16 @@ the set was not changed.
   (governance.md already says so); the scoreboard keeps one dated section per
   corpus version.
 - Rotation applies to every scanner in the same run.
-- No rotation before v1.0 is declared stable and one full disclosure round has
-  completed on the current corpus; moving the target before the first round
-  finishes would make the first scores incomparable to anything.
+- No rotation before v1.0 is declared stable and one full published scoreboard run has
+  completed on the current corpus; moving the target before the first scoreboard
+  is out would make the first scores incomparable to anything.
 - **Unscheduled rotation** is allowed (and announced with whatever notice is
   possible) in two cases: evidence that a held-back server has been exposed
   (see above), or evidence of corpus-specific tuning (for instance a scanner
   shipping a rule that matches a public marker string rather than the class).
   Both are recorded in [decisions.md](../decisions.md) with the evidence.
 - Twelve months is a compromise. Shorter would exhaust the authoring capacity of
-  a small maintainer group and leave no time for a disclosure round per corpus
+  a small maintainer group and leave no time for a published run and its disputes per corpus
   version; longer would give tuning a year to settle. If the first held-back
   check shows no tuning anywhere, the cadence can be lengthened by amendment.
 
@@ -171,7 +171,7 @@ the set was not changed.
    flagged is an editorial claim. Everyone gets the columns; the threshold
    decides the note.
 5. **Rotate every six months.** Rejected on authoring cost and on the time a
-   disclosure round takes. Revisit if tuning is observed.
+   run and its disputes take. Revisit if tuning is observed.
 6. **Rotate only on evidence of leakage.** Rejected as the sole trigger: tuning
    is slow and quiet, and a schedule is what lets vendors plan for it, which is
    the point of announcing it.
@@ -183,23 +183,23 @@ the set was not changed.
    governance.md to withdraw a promise. Rejected because without it, a score on
    a public, searchable corpus cannot be told apart from a score on a tuned one.
 
-## Impact on published and disclosed results
+## Impact on published results
 
 No published number changes. This amendment adds a measurement; it does not
 alter how any existing recall, precision, near-miss or unmapped figure is
 computed, and no per-class result can flip as a result. So none of the
-re-disclosure triggers in governance.md is hit by the amendment itself.
+material-change triggers in governance.md is hit by the amendment itself.
 
 The first held-back check does produce new numbers for every scanner, and those
-fall under "no result is published before its maintainers have seen it": each
-maintainer receives their held-back figures and the gap, with the commitment
-hash, for the 14-day window before they appear. Every scanner that was run
-needs this, including those with zero recall, since a zero public result can
-still carry a nonzero held-back one. Scanners that were unavailable (cannot
-be run without a token) have no held-back result to disclose.
+are published directly, like every other number: each scanner's held-back
+figures and the gap appear with the commitment hash, and its maintainers have the
+usual right of reply and dispute afterwards. Every scanner that was run gets
+these, including those with zero recall, since a zero public result can still
+carry a nonzero held-back one. Scanners that were unavailable (cannot be run
+without a token) have no held-back result to publish.
 
 The public-corpus rotation, when it happens, is not an amendment but a corpus
-version bump, and carries the usual re-disclosure for each scanner.
+version bump, and carries a published correction notice for each scanner.
 
 ## Test changes needed
 

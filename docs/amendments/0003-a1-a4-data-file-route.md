@@ -3,7 +3,7 @@
 Status: **proposed, not adopted.** Nothing in this file is in force. It becomes
 a pull request and waits out the 14-day comment period in
 [governance.md](../governance.md#amending-this-policy). Because it changes how
-labels are mapped, it also needs the corpus-version and re-disclosure steps
+labels are mapped, it also needs the corpus-version and published-correction-notice steps
 described under Impact.
 
 ## Problem
@@ -177,10 +177,10 @@ Options 1, 3 and 4 above. In addition:
   not a fix: it would remove the legitimate detection from scope and then score
   its detection as an error. Rejected, and it would need its own corpus bump.
 
-## Impact on published and disclosed results
+## Impact on published results
 
 No result has been published, so nothing here is retroactive. Under
-[governance.md](../governance.md#amending-this-policy) and its re-disclosure
+[governance.md](../governance.md#amending-this-policy) and its material-change
 rules, a change in mapping that affects a tool is a trigger, and per-class
 results flipping between detected and missed is another.
 
@@ -189,16 +189,17 @@ results flipping between detected and missed is another.
   `data/` directory. Whether any scanner run so far has such a finding is a
   mechanical check against the committed raw output with the amended mapper in
   place; this proposal does not assume the answer. Where none does, no
-  published figure changes and no re-disclosure is owed beyond describing the rule.
+  published figure changes and no correction notice is owed beyond describing the rule.
 - For an affected scanner, the change converts a false positive plus a near miss
   plus a false negative into a true positive on the A4 item. Recall on A4 and
   overall recall can rise, precision can rise, and the per-class A4 result can
-  flip from missed to detected. A flip triggers re-disclosure.
+  flip from missed to detected. A flip triggers a published correction notice.
 - No other scanner's figures move, because entries default to `any`.
 - The corpus version does not change (no manifest content changes); the mapping
   files are frozen against the corpus version and gain new entries, which changes
-  their own version. This is a mapping change, so the affected maintainers see
-  the new entry and its rationale in the disclosure window.
+  their own version. This is a mapping change, so the new entry and its rationale
+  are published with the scoreboard, and the affected maintainers can dispute
+  them after publication.
 
 ## Test changes needed
 

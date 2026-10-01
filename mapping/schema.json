@@ -317,7 +317,7 @@
             },
             "redisclosure_sent_on": {
               "$ref": "#/$defs/iso_date",
-              "description": "A mapping change affecting a published score triggers re-disclosure (governance.md#disclosure-before-publication)."
+              "description": "A mapping change affecting a published score triggers a published correction notice (governance.md#publication-and-right-of-reply). Field name kept from the earlier pre-publication disclosure policy."
             }
           },
           "allOf": [

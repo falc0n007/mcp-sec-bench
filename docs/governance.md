@@ -65,7 +65,8 @@ Vendors **may not**:
 
 - Influence the corpus, the taxonomy, or the mapping decisions except through
   the public dispute process, where the reasoning is visible to everyone.
-- Obtain results before the disclosure window, ahead of other vendors.
+- Obtain results ahead of other vendors. Nobody sees results before they are
+  published.
 - Require changes as a condition of participation, or condition permission-to-
   benchmark on a favourable outcome. We do not seek permission to publish
   measurements of publicly available tools.
@@ -105,8 +106,8 @@ contest a published result.
 3. **Misconfiguration or adapter bug** — we fix, re-run, and publish a correction
    entry. The original result stays visible with a pointer to the correction.
 4. **Mapping dispute** — the rationale is reviewed in public. If we are
-   persuaded, the mapping changes, the corpus version bumps, and every affected
-   scanner is re-disclosed. If we are not, **both positions are published
+   persuaded, the mapping changes, the corpus version bumps, and a correction
+   notice is published for every affected scanner. If we are not, **both positions are published
    side by side on the scoreboard row.** A reader is entitled to see the
    disagreement rather than only our resolution of it.
 5. **Target response**: acknowledgement within 7 days, resolution or a published
@@ -115,23 +116,44 @@ contest a published result.
 Disputes are never resolved privately. A correction that only the disputing
 vendor knows about is not a correction.
 
-## Disclosure before publication
+## Publication and right of reply
 
-No result is published before its maintainers have seen it.
+Results are published directly. **Maintainers of a benchmarked scanner are not
+shown their results before publication.**
 
-- Every scanner's maintainers receive their **full results, the methodology, and
-  the exact mapping decisions applied to their tool**, with a **14-day window**
-  to respond, correct, or identify a misconfiguration.
-- Responses are **published alongside the scores**, unedited except for length,
-  with a link to the full text. A maintainer who declines to respond is recorded
-  as "no response", with no characterisation of why.
-- The window is elapsed time and is not compressed for launch timing.
+> Changed 2026-09-30. Until this date this section committed to a private
+> pre-publication round: every scanner's maintainers would see their full
+> results, the methodology and the mapping decisions applied to their tool, with
+> 14 days to respond, before anything was published. The project owner decided
+> not to run that round. The change was made by the owner directly and did not go
+> through the 14-day public comment path below. See [decisions.md](decisions.md)
+> for the decision and its cost. The old text is not hidden: it is in the git
+> history, and [disclosure.md](disclosure.md) is kept as a record of what was
+> prepared and not run.
 
-**Re-disclosure** is triggered when a previously published scanner's score
-**materially changes**, defined concretely as any of: overall recall moving by
-10 percentage points or more, any per-class result flipping between detected and
-missed, or a change in mapping that affects that tool. Materially-changed
-results get a fresh 14-day window before republication.
+What replaces it:
+
+- Every maintainer, and anyone else, has a **right of reply and correction after
+  publication**, through [Contesting a result](#contesting-a-result). It is open
+  to vendors and non-vendors alike.
+- A response from a scanner's maintainers is **published alongside the scores**,
+  unedited except for length, with a link to the full text. This applies only
+  if they choose to submit one. Silence is not recorded as "no response" or
+  characterised in any way: absence of a reply says nothing about a result.
+- Corrections follow [Publishing and corrections](#publishing-and-corrections):
+  new, dated entries, with the original left visible.
+- The cost is real and is ours to state: a vendor learns its numbers when
+  everyone else does, and a misconfiguration or mapping error on our side is
+  caught after publication, not before. Every number is traceable to a
+  `corpus_version`, `scanner_version` and `adapter_version`, and raw output is
+  committed, so a reader can check a disputed result without waiting for us.
+
+**Material change.** When a previously published scanner's score **materially
+changes**, a **published correction notice** is issued for it. Materially
+changed means any of: overall recall moving by 10 percentage points or more,
+any per-class result flipping between detected and missed, or a change in
+mapping that affects that tool. The notice states what changed and why, and the
+superseded result stays reachable.
 
 ## Publishing and corrections
 
@@ -161,15 +183,17 @@ Ordinary amendments — everything except the no-scanner rule — follow this pa
 2. A minimum **14-day public comment period** before merge.
 3. On merge, an entry in [decisions.md](decisions.md) with the date and rationale.
 4. **No retroactive application.** Published results keep the rules they were
-   produced under. If an amendment would change a published number, the affected
-   scanners are re-disclosed before republication.
+   produced under. If an amendment would change a published number, a published
+   correction notice is issued for each affected scanner when the new number is
+   republished, and the superseded number stays visible.
 
 ### Amending the taxonomy
 
 Taxonomy changes follow the same path plus: a corpus version bump, and
-re-disclosure to every scanner whose results the change affects. A class
-definition is never narrowed or widened in a way that changes an existing
-scanner's score without that scanner's maintainers seeing it first.
+a published correction notice for every scanner whose results the change
+affects. A class definition is never narrowed or widened in a way that changes
+an existing scanner's score without that change, its reasoning and the old and
+new numbers being published together.
 
 ## What this policy does not promise
 

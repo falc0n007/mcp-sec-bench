@@ -224,8 +224,8 @@ reports unmapped counts as a taxonomy-review trigger, and the README says so
 next to the column. Nobody is ranked by it.
 
 What `unmapped` does cost the scanner is recall: the item it may genuinely have
-found stays a false negative. That asymmetry is real, it is disclosed to the
-vendor during the 14-day window, and it is the price of not guessing.
+found stays a false negative. That asymmetry is real, it is stated
+in the published results, and it is the price of not guessing.
 
 ## 8. Disputes, and publishing both positions
 
@@ -238,8 +238,8 @@ Every published number carries one, by design.
 2. **Public review** of the rationale. Never a private resolution.
 3. **If we are persuaded**: the entry changes, an `history` record is appended
    with the reason and the governance reference (published results are never
-   silently edited), the corpus version bumps, and every affected scanner is
-   re-disclosed with a fresh 14-day window.
+   silently edited), the corpus version bumps, and a published correction
+   notice is issued for every affected scanner.
 4. **If we are not persuaded**: the entry is marked `status: disputed`, the
    vendor's position is recorded **in their words** alongside ours in the
    entry's `dispute` block with `outcome: both-positions-published`, and the
@@ -263,8 +263,8 @@ A worked example of the both-positions shape is
   points at one.
 - Entries are superseded, never deleted: `status: withdrawn` plus a `history`
   record.
-- A mapping change that moves a published score triggers re-disclosure under
-  [governance.md](governance.md#disclosure-before-publication).
+- A mapping change that moves a published score triggers a published correction
+  notice under [governance.md](governance.md#publication-and-right-of-reply).
 - Illustrative placeholder files cannot be loaded into a scoring run without an
   explicit opt-in flag, so invented labels cannot reach a scoreboard by
   accident.
@@ -273,7 +273,7 @@ A worked example of the both-positions shape is
 
 ## 10. Per-scanner mapping tables
 
-> **Status as of the Phase 3 disclosure round.** Four tables below record labels
+> **Status as of the Phase 3 decision (no pre-publication round, 2026-09-30).** Four tables below record labels
 > captured from real output this project produced. One, Snyk's, is **unverified**:
 > a token gates all of that tool's analysis, so no real output has ever been
 > observed and its labels are best guesses from documentation. Nothing in this
@@ -443,7 +443,7 @@ Mapping file: `mapping/snyk-agent-scan.json`. Scanner version(s) checked: 0.6.3.
 
 | Scanner | Rationale | Our class | Vendor's class | Outcome | Scoreboard note |
 | --- | --- | --- | --- | --- | --- |
-| *(none open; the disclosure round has not closed)* | | | | | |
+| *(none open; no results have been published yet)* | | | | | |
 
 ---
 

@@ -1,13 +1,12 @@
 # Launch write-up
 
-**Status: DRAFT. Not to be published until the disclosure round closes and
-corrections are folded in.**
+**Status: DRAFT. Not to be published until the publishing run has produced the
+scoreboard and every `[RESULT: ...]` placeholder below has been filled from it.**
 
 This repository is public. This file therefore contains no scanner scores, no
 recall or precision figures, and no per-scanner outcomes. Everything that would
-be one is a bracketed placeholder, for example `[RESULT: ...]` or
-`[MAINTAINER RESPONSE: ...]`. Fill them from the published scoreboard only, and
-only after the window described in [disclosure.md](disclosure.md) has closed.
+be one is a bracketed placeholder, for example `[RESULT: ...]`. Fill them from
+the published scoreboard only.
 Before publishing, search this file for `[` and confirm none remain.
 
 ---
@@ -106,24 +105,24 @@ Collapsing these into one number is unfair to every tool involved. Where a
 scanner scored zero on a class, the write-up states which kind, with the
 evidence.
 
-## How the disclosure round deviated from our own policy
+## Results were published without pre-publication review
 
-[governance.md](governance.md#disclosure-before-publication) commits that every
-scanner's maintainers receive their full results, the methodology, and the exact
-mapping decisions applied to their tool, with 14 days to respond, before anyone
-else sees a number.
+[governance.md](governance.md#publication-and-right-of-reply) originally
+committed that every scanner's maintainers would see their full results, the
+methodology and the mapping decisions applied to their tool, with 14 days to
+respond, before anyone else saw a number. **We did not do that.** On 2026-09-30
+the project owner decided not to run the round, and the results were published
+without any maintainer seeing them first. We recorded the change in
+[decisions.md](decisions.md) rather than leaving the old text standing, and we
+say plainly that it was an owner decision made without the public comment period
+the policy prescribes for its own amendment.
 
-**We did not honour that for the first round.** The repository was made public
-with preliminary figures already in its commit history. We recorded the
-deviation in [decisions.md](decisions.md) and in the README instead of rewording
-the policy to match what happened, and we ran the round immediately instead of
-retroactively justifying the ordering. Subsequent rounds follow the policy as
-written; this does not set a precedent.
-
-What this means for a reader: early figures exist in the commit history and were
-seen by the public before the maintainers saw them. Corrections from the round
-have been folded in since, and are listed in `[CORRECTIONS: summary of changes
-made after maintainer review, with links to the dated entries]`.
+What this means for a reader: a vendor saw its numbers at the same moment you
+did, and an error in our setup would be caught after publication, not before.
+Any maintainer or member of the public can dispute a result (see
+[How to dispute a result](#how-to-dispute-a-result)). Corrections are published
+as dated entries with the original left visible, and a response from a scanner's
+maintainers is published alongside its scores.
 
 ## Known limitations
 
@@ -159,7 +158,7 @@ we expect some to be wrong.
 ## Results
 
 *Everything below is a placeholder to be filled from the published scoreboard
-after the disclosure window closes. Do not write results from memory, from the
+from the publishing run. Do not write results from memory, from the
 commit history, or from the preliminary figures.*
 
 Corpus version `[CORPUS_VERSION]`, produced `[DATE]`, `[N]` scanners measured.
@@ -175,7 +174,6 @@ The shape of what to report, one scanner at a time, in alphabetical order:
 - `[RESULT: <scanner> unmapped count, near-miss count with false-positive count
   beside it]`
 - `[RESULT: <scanner> requires signup, stages attempted, config label]`
-- `[MAINTAINER RESPONSE: <scanner>, verbatim or linked, or "no response"]`
 
 Cross-scanner observations, only if the data supports them:
 
@@ -187,13 +185,10 @@ Cross-scanner observations, only if the data supports them:
 - `[RESULT: any scanner whose run-to-run range exceeded the high-variance
   threshold]`
 
-For each scanner whose maintainers responded, `[MAINTAINER RESPONSE: ramparts]`,
-`[MAINTAINER RESPONSE: cisco]`, `[MAINTAINER RESPONSE: mcp-guard]`,
-`[MAINTAINER RESPONSE: sentinel-scan-cli]`, and
-`[MAINTAINER RESPONSE: snyk-agent-scan]`, quote the response as published on the
-scoreboard row, unedited except for length, and say what we changed because of
-it. If a mapping dispute is unresolved, show both positions side by side as the
-policy requires.
+If a scanner's maintainers have submitted a response, quote it as published on
+the scoreboard row, unedited except for length, and say what we changed because
+of it. If a mapping dispute is unresolved, show both positions side by side as
+the policy requires.
 
 ## Add your scanner
 
@@ -204,9 +199,9 @@ output. An account requirement is disclosed, not disqualifying.
 
 A submission is an adapter, a pinned Dockerfile, a mapping file in which every
 label has a written reason, and tests. Vendors may submit for their own tool;
-authorship is disclosed on the row. Before any result for your tool is
-published, you see it, the methodology, and the mapping decisions applied to it,
-and have 14 days to respond. Your response is published next to the score.
+authorship is disclosed on the row. A result for your tool can be disputed
+after publication like any other, and a response from you is published next to
+the score.
 
 The walkthrough is
 [adding-a-scanner.md](adding-a-scanner.md).
@@ -220,8 +215,8 @@ Every published number is traceable to those.
 We re-run the configuration and post the raw output. A misconfiguration or
 adapter bug is fixed, re-run, and published as a correction entry with the
 original left visible. A mapping dispute is reviewed in public: if we are
-persuaded, the mapping changes, the corpus version bumps, and every affected
-scanner is re-disclosed; if not, both positions are published side by side on
+persuaded, the mapping changes, the corpus version bumps, and a correction
+notice is published for every affected scanner; if not, both positions are published side by side on
 the row. We aim to acknowledge within 7 days and to resolve or publish a
 statement of disagreement within 30. Disputes are never settled privately,
 because a correction only the disputing vendor knows about is not a correction.
@@ -272,11 +267,11 @@ credential-free configurations only. When a scanner scores zero I say whether it
 never reads that surface or read it and has no rule, because those are different
 claims.
 
-I have to own a process failure: the repo went public with early figures in its
-history before the maintainers had seen their results, contrary to the policy
-written in the repo. That is logged in docs/decisions.md and the disclosure round
-ran afterwards. `[RESULT: one-sentence shape of the finding, filled from the
-published scoreboard]`. `[MAINTAINER RESPONSE: link to published responses]`.
+I have to own a process failure: the results were published without the
+pre-publication review by maintainers that the policy in the repo originally
+promised. I decided not to run it, and that is logged in docs/decisions.md. Any
+maintainer can dispute a result in public. `[RESULT: one-sentence shape of the
+finding, filled from the published scoreboard]`.
 
 If your scanner is missing, there is a walkthrough for adding it, and if a
 result of yours is wrong, a public dispute process that ends with both positions
@@ -312,10 +307,10 @@ Limitations: small synthetic corpus; one A1 versus A4 case knowingly mis-scored;
 inflatable near-miss counter; credential-free configurations only; and a zero
 is described as scan-surface, rule-coverage, or our-setup, not as one number.
 
-Disclosure: we did not follow our own policy for the first round. The repo went
-public with preliminary figures in its history before maintainers saw their
-results. It is recorded in the repo and the 14-day round was run afterwards.
-`[MAINTAINER RESPONSE: summary of who responded, from the published scoreboard]`
+Disclosure: we did not follow our own original policy. Results are published
+without pre-publication review by maintainers; the owner dropped that round on
+2026-09-30 and it is recorded in the repo. Anyone can dispute a result, and
+maintainers' responses are published beside the scores.
 
 `[RESULT: one-sentence shape of the finding, filled from the published
 scoreboard]`

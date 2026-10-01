@@ -19,21 +19,22 @@ are not repeated here beyond what a reader needs:
    removed.
 4. No retroactive application. Published results keep the rules they were
    produced under; if an amendment would change a published number, the affected
-   scanners are re-disclosed before republication.
+   scanners get a published correction notice when the new number is republished,
+   with the superseded number left visible.
 
 Taxonomy changes additionally bump the corpus version. The no-scanner rule
 cannot be amended at all.
 
 Each proposal follows one shape: Status, Problem, Proposed change (the new
 definition text, and the code change by function name), Alternatives considered,
-Impact on published and disclosed results, and Test changes. Files are numbered
+Impact on published results, and Test changes. Files are numbered
 in the order proposed and never renumbered. A proposal that is adopted, rejected
 or withdrawn has its Status line updated with the date and a link to the
 decision, and the file stays.
 
 Concrete per-scanner figures do not appear in these files. They describe impact
-qualitatively, because disclosure has not completed and the numbers belong to the
-disclosure process, not to a design document.
+qualitatively, because the numbers belong to the published scoreboard, not to a
+design document.
 
 ## Index
 

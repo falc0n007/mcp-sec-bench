@@ -8,7 +8,7 @@
 #   make lab-up      bring the corpus online, egress blocked
 #   make verify      every correctness check the project has
 #   make scoreboard  run the benchmark and render the scoreboard
-#   make disclosure-pack  build per-scanner disclosure packs (SCANNER=id for one)
+#   make disclosure-pack  build per-scanner result packs for disputes (SCANNER=id for one)
 #   make site        preview the static scoreboard site and badges locally
 #   make all         setup + images + lab-up + verify + scoreboard
 #
@@ -74,8 +74,8 @@ scoreboard:
 	$(PY) -m runner.cli --scanners all --runs 5 --detail
 
 # Reads results/local/results.json, so run `make scoreboard` first. Writes to
-# results/local/disclosure/<scanner>/, which is gitignored: numbers stay
-# unpublished until the disclosure window has run.
+# results/local/disclosure/<scanner>/, which is gitignored. Used to hand a
+# vendor everything behind their row when they dispute a published result.
 disclosure-pack:
 	$(PY) tools/disclosure_pack.py $(if $(SCANNER),--scanner $(SCANNER),--all)
 

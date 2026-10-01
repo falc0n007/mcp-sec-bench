@@ -4,7 +4,7 @@ Status: **locked for v1.** These rules were written before any results existed.
 That ordering is the point: see [governance.md](governance.md).
 
 Changes follow the amendment process and never apply retroactively to published
-results without re-disclosure.
+results without a published correction notice.
 
 ## The unit of judgment
 
@@ -93,7 +93,7 @@ Two rules keep this from becoming a thumb on the scale:
 1. The tolerated set is frozen when the corpus version is tagged, before any
    scanner runs against it.
 2. Adding an entry after results exist requires a governance-logged amendment, a
-   version bump of the corpus, and re-disclosure to every affected scanner.
+   version bump of the corpus, and a published correction notice for every affected scanner.
 
 ## Metrics
 

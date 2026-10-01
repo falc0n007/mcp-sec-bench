@@ -114,6 +114,8 @@ The real engineering. The taxonomy mapping is harder than the plumbing.
 
 ## Phase 3 — Private disclosure round
 
+**Skipped by owner decision, 2026-09-30.** The round described below was not run and nobody was contacted; see [decisions.md](decisions.md). Results are published directly, and the post-publication dispute route in [governance.md](governance.md#publication-and-right-of-reply) replaces it. The original plan is kept as written.
+
 **Weeks 8–10 · \~10 hrs active, 2 weeks elapsed**
 
 Do not skip this. It is the difference between "independent benchmark" and "hit piece."
@@ -130,7 +132,7 @@ Two reasons this pays: maintainers who were consulted tend to link to the benchm
 
 **Done when:** the window closes and corrections are folded in.
 
-**Note:** this is elapsed time that cannot be compressed. Going full-time does not shorten it.
+**Note:** this is elapsed time that cannot be compressed. Going full-time does not shorten it. (Moot: the phase was skipped, so the timeline below no longer includes it.)
 
 ## Phase 4 — Public launch
 
@@ -154,7 +156,7 @@ Two reasons this pays: maintainers who were consulted tend to link to the benchm
 - Quarterly corpus additions as new attack classes appear
 - **Hold back a private test set** and rotate the public one periodically, or tools will tune to the benchmark and the numbers stop meaning anything
 - Triage adapter submissions from vendors
-- Re-run disclosure for any scanner whose score materially drops
+- Publish a correction notice for any scanner whose score materially changes
 
 ## Timeline
 
@@ -165,13 +167,13 @@ Assumes \~10 hrs/week (evenings plus part of a weekend).
 | 0 — Scope & neutrality | Weeks 1–2 | 2 days |
 | 1 — Corpus | Weeks 3–5 | 4 days |
 | 2 — Runner & normalization | Weeks 5–8 | 5–6 days |
-| 3 — Disclosure round | Weeks 8–10 (mostly waiting) | 2 weeks elapsed |
+| 3 — Disclosure round | Skipped 2026-09-30 | Skipped |
 | 4 — Launch | Weeks 10–12 | 3 days |
-| **To public v1** | **\~12 weeks** | **\~3 weeks work + 2 weeks disclosure** |
+| **To public v1** | **\~12 weeks as originally planned; about 2 weeks less without Phase 3** | **\~3 weeks work (the 2 weeks disclosure no longer apply)** |
 
 Add 30% realistically. Corpus design always overruns.
 
-The disclosure window is elapsed time that cannot be compressed, so going full-time helps less than the table suggests.
+The disclosure window was the one piece of elapsed time that could not be compressed. It is no longer part of the plan, so nothing in the timeline is pinned to waiting on a third party.
 
 ## Scanners in the benchmark
 
@@ -264,14 +266,14 @@ which is exactly why it goes through both before anyone quotes it.
 - [x] Draft disclosure email template
 - [x] Identify maintainer contacts for each scanner (see disclosure.md; three need a GitHub issue)
 - [x] Per-scanner disclosure pack (`make disclosure-pack`)
-- [ ] Send results with 14-day window
-- [ ] Log responses
-- [ ] Fold in corrections
+- [ ] ~~Send results with 14-day window~~ -- skipped, owner decision 2026-09-30 ([decisions.md](decisions.md))
+- [ ] ~~Log responses~~ -- skipped, owner decision 2026-09-30 ([decisions.md](decisions.md))
+- [ ] ~~Fold in corrections~~ -- skipped as a pre-publication step; corrections now follow publication through the dispute route ([decisions.md](decisions.md))
 
 **Phase 4 — Launch**
 
 - [ ] README with scoreboard at top
-- [x] GitHub Pages site + Actions regeneration (built; deploy gated on `PUBLISH_SCOREBOARD` until disclosure closes)
+- [x] GitHub Pages site + Actions regeneration (built; deploy gated on `PUBLISH_SCOREBOARD` until the owner runs the publishing run)
 - [x] "Add your scanner" contribution guide ([adding-a-scanner.md](adding-a-scanner.md))
 - [x] Embeddable badge (no score; `tools/badges.py`)
 - [ ] Launch writeup (methodology-first) -- drafted in [launch-writeup.md](launch-writeup.md), results are placeholders
@@ -293,7 +295,7 @@ which is exactly why it goes through both before anyone quotes it.
 | --- | --- | --- |
 | Scope creep into building a scanner | The single biggest threat. Every benchmark author eventually thinks "I could detect this better." Doing it destroys the neutrality claim. | No-scanner rule written into the README in Phase 0. If the itch persists, ship it as a separate repo under a different name, after v1 is stable. |
 | Dual-use perception | Publishing a library of vulnerable MCP servers can read as offensive tooling and get amplified as criticism instead of work. | Sandboxed lab, minimal payloads, explicit ethics/scope note from day one, defensive-research framing in the launch post. |
-| Maintainer hostility | A public scoreboard that makes tools look bad invites pushback. | Phase 3 disclosure round handles almost all of this. Publish their responses alongside scores. |
+| Maintainer hostility | A public scoreboard that makes tools look bad invites pushback. | The Phase 3 round that was meant to absorb this was skipped (2026-09-30). Mitigation is now after the fact: a public dispute route, published corrections with the original visible, and maintainers' responses published alongside scores. This risk is higher than planned. |
 | Too few working adapters | Three tools is a thin scoreboard. | Ship anyway. An incomplete benchmark that exists beats a complete one that doesn't. |
 | Mapping disputes | Disjoint taxonomies mean every mapping is a judgment call someone can contest. | Document rationale per mapping; make the mapping file a first-class, reviewable artifact. |
 | Benchmark overfitting | Once tools tune to the corpus, scores stop meaning anything. | Private held-back set, periodic rotation of the public corpus. |

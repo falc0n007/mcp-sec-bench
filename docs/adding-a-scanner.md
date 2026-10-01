@@ -260,8 +260,8 @@ tables in [mapping-rationale.md](mapping-rationale.md#10-per-scanner-mapping-tab
 are the human-readable record of those entries; the maintainers update them when
 your file is accepted, and a pull request that changes a mapping should keep the
 two consistent. Run the checks below and read the gap report: any label your
-tool can emit that has no entry shows up there, and goes to your own
-maintainers in the disclosure pack as something we ignored.
+tool can emit that has no entry shows up there, and is published with your
+results as something we ignored.
 
 A mapping is frozen against a `corpus_version` before a scoring run
 (`frozen_for_corpus_version`). Mid-run edits do not happen quietly.
@@ -358,16 +358,15 @@ What to check on your first run:
    whether you are the vendor or a maintainer of the tool, and any other tie.
 2. **Review is public.** A maintainer with a disclosed tie to your tool recuses.
    Expect to be argued with on mapping entries; that is the point of the file.
-3. **Disclosure before publication.** No result is published before its
-   maintainers have seen it. You (or the tool's maintainers, if you are not
-   them) receive the full results, the methodology, the exact mapping decisions
-   applied to the tool, and how it was invoked, with a **14-day window** to
-   respond, correct, or identify a misconfiguration
-   ([governance.md](governance.md#disclosure-before-publication)). The pack is
-   built by `tools/disclosure_pack.py`.
-4. **Your response is published** alongside the scores, unedited except for
-   length. If you decline to respond, the row says "no response" and nothing
-   else.
+3. **No pre-publication review.** Results are published without the tool's
+   maintainers seeing them first. An earlier version of the policy promised a
+   14-day private round; it was dropped on 2026-09-30
+   ([governance.md](governance.md#publication-and-right-of-reply),
+   [decisions.md](decisions.md)). Every published number carries the
+   `corpus_version`, `scanner_version`, `adapter_version` and how the tool was
+   invoked, and raw output is committed, so you can check it yourself.
+4. **Your response is published** alongside the scores if you submit one,
+   unedited except for length. If you do not, the row says nothing about why.
 5. **If a result is wrong, it is corrected and the original stays visible**, with
    a pointer to the correction. Published results are never silently edited.
 6. **Disputes** go in a public issue citing the `corpus_version`,

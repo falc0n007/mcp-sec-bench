@@ -113,19 +113,19 @@ No change to scoring, mapping or the corpus.
    would be read as an explanation of them. A separate table keeps the facts
    adjacent without being part of the measurement.
 
-## Impact on published and disclosed results
+## Impact on published results
 
 No recall, precision, near-miss or unmapped figure changes for any scanner, and
-no per-class result can flip, so none of the re-disclosure triggers in
+no per-class result can flip, so none of the material-change triggers in
 governance.md fires. The amendment adds information; it does not change a
 published number.
 
 Two handling points regardless:
 
 - The `maintainer_type` classification is a statement about each maintainer.
-  Each scanner's record is included in the material sent in the disclosure
-  round, with its source URL, so a maintainer who disagrees can say so in the
-  14-day window and the response is published beside it.
+  Each scanner's record is published with its source URL, so a maintainer who
+  disagrees can dispute it after publication and the response is published
+  beside it. Nobody is shown it first.
 - A scanner whose maintainer type is `vendor` while an adapter was also
   submitted by that vendor is already disclosed on the row; this field is a
   separate fact and does not replace that disclosure.

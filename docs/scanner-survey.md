@@ -537,7 +537,7 @@ Searched $RAMPARTS_RULES_DIR, the executable directory, ~/.ramparts/rules, and .
 The rules live in `rules/pre/*.yar` in the source tarball. The adapter must download the
 matching source tag and set `RAMPARTS_RULES_DIR`, or pattern detection is off and the tool
 scores zero for reasons that have nothing to do with its detection quality. **This alone
-justifies the disclosure round.**
+shows why a published result needs a public dispute route.**
 
 **What we hand it [V].** A live MCP server URL — the best fit of any tool here for our
 runtime stage:

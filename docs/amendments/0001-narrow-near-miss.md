@@ -145,12 +145,12 @@ No change to `mapping.py`, `corpus.py` or `models.py`.
 5. **Leave it, rely on the pairing rule.** Rejected as the long-term position.
    The pairing rule binds us, not anyone who quotes the column.
 
-## Impact on published and disclosed results
+## Impact on published results
 
-No results have been published and disclosure round 1 has not completed, so
-nothing is retroactively changed. Under
+No results have been published, so nothing is retroactively changed. Under
 [governance.md](../governance.md#amending-this-policy), the rule that matters is
-that a changed published number triggers re-disclosure to affected scanners.
+that a changed published number triggers a published correction notice for affected
+scanners.
 
 - The change can only lower a near-miss count, never raise it, and affects no
   true-positive, false-positive, false-negative, recall or precision figure. It
@@ -160,13 +160,13 @@ that a changed published number triggers re-disclosure to affected scanners.
   count actually moves depends on how many classes it reports on the servers
   where it was previously credited with one, which has to be recomputed from
   its raw findings with the amended scorer rather than assumed.
-- The re-disclosure definition in governance.md (recall moves by 10 points, a
+- The material-change definition in governance.md (recall moves by 10 points, a
   per-class flip, a mapping change) does not literally cover a near-miss
   change. The amendment's own "no retroactive application" clause does, since a
-  published number would change. Recommendation: treat it as covered, and tell
-  the affected maintainer in the round that publishes the amended scorer. If the
-  amendment merges before the first publication, there is nothing to re-disclose
-  beyond describing the definition in the methodology the maintainers receive.
+  published number would change. Recommendation: treat it as covered, and
+  publish a correction notice for the affected scanner alongside the amended
+  scorer. If the amendment merges before the first publication, there is nothing
+  to correct beyond describing the definition in the published methodology.
 - Fixtures: `fixture-overflagger` would drop to zero near misses. `fixture-near-miss`
   reports one wrong class per server and keeps its near misses.
 

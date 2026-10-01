@@ -1,17 +1,20 @@
 # Disclosure round
 
-Status: **round 1 in progress**, opened 2026-09-17.
+Status: **not run -- superseded 2026-09-30.**
 
-[governance.md](governance.md#disclosure-before-publication) commits to every
-scanner's maintainers receiving their full results, the methodology, and the
-exact mapping decisions applied to their tool, with **14 days** to respond,
-before anyone else sees a number. Responses are published alongside the scores.
+The project owner decided on 2026-09-30 that this private pre-publication round
+will not be run. No maintainers or companies have been contacted, nothing in this
+document is pending, and the status table, send dates and window below were never
+started. Results are published directly, and the post-publication dispute route
+in [governance.md](governance.md#publication-and-right-of-reply) applies. See
+[decisions.md](decisions.md) for the decision and what it costs.
 
-**Round 1 deviated from that ordering.** The repository was made public with
-preliminary figures already in its commit history. The deviation is recorded in
-[decisions.md](decisions.md) and stated in the README. Round 1 is being run
-immediately rather than retroactively justified. Subsequent rounds follow the
-policy as written.
+The rest of this file is kept as a historical record of what was prepared. The
+contact research and the email template may be useful if a pre-publication step is
+ever reintroduced, or for courtesy contact after publication. Treat the text
+below as describing a plan that was dropped, not a commitment.
+
+---
 
 ## Why this round matters more than usual
 

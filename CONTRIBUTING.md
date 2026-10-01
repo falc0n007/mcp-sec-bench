@@ -49,8 +49,9 @@ unmapped) carries a written rationale, and tests modelled on
   as replacements.
 - A scanner that needs an account is benchmarked, and the requirement is
   published as a column.
-- Before any result is published, the scanner's maintainers see it and have 14
-  days to respond.
+- Results are published without pre-publication review by maintainers. If you
+  disagree with one, dispute it after publication (below); your response is
+  published alongside the score.
 
 The step-by-step guide, with the exact files and commands, is
 [docs/adding-a-scanner.md](docs/adding-a-scanner.md).

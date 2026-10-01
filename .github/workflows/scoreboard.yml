@@ -2,9 +2,9 @@
 #
 # PUBLISHING IS GATED. The `deploy` job runs only when the repository variable
 # PUBLISH_SCOREBOARD is exactly 'true' (Settings > Secrets and variables >
-# Actions > Variables). Leave it unset until the disclosure round in
-# docs/disclosure.md has closed: numbers must not become public before the
-# vendors have had their window. While the gate is off, this workflow still
+# Actions > Variables). It is the owner's switch for when a scoreboard goes
+# public; there is no pre-publication review round (docs/decisions.md,
+# 2026-09-30). While the gate is off, this workflow still
 # runs the whole pipeline so it is known to work, but it
 #   - writes the scoreboard output to a file and never prints it to the log
 #     (Actions logs of a public repository are public), and
