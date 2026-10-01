@@ -1,0 +1,1 @@
+[![mcp-sec-bench: Snyk agent-scan (fka Invariant Labs mcp-scan)](https://img.shields.io/endpoint?url=https%3A%2F%2Ffalc0n007.github.io%2Fmcp-sec-bench%2Fbadges%2Fsnyk-agent-scan.json)](https://falc0n007.github.io/mcp-sec-bench/scanners/snyk-agent-scan.html)

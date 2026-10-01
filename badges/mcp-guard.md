@@ -1,0 +1,1 @@
+[![mcp-sec-bench: mcp-guard (SaravanaGuhan/mcp-guard)](https://img.shields.io/endpoint?url=https%3A%2F%2Ffalc0n007.github.io%2Fmcp-sec-bench%2Fbadges%2Fmcp-guard.json)](https://falc0n007.github.io/mcp-sec-bench/scanners/mcp-guard.html)

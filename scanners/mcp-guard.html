@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mcp-guard (SaravanaGuhan/mcp-guard) - mcp-sec-bench</title>
+<style>
+:root {
+  --bg: #fbfaf8; --fg: #1d1c1a; --muted: #67645e; --rule: #dedbd4;
+  --surface: #f3f1ec; --accent: #1f5f8b; --warn-bg: #f7eed8; --warn-fg: #6b4b05;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161514; --fg: #e8e6e1; --muted: #a09c93; --rule: #34322e;
+    --surface: #1e1d1b; --accent: #7db7e0; --warn-bg: #2d2615; --warn-fg: #e6cf8f;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 1.25rem; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+.wrap { max-width: 68rem; margin: 0 auto; padding: 2.5rem 0 4rem; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .4rem; letter-spacing: -.01em; }
+h2 { font-size: 1.2rem; margin: 2.6rem 0 .6rem; }
+p { max-width: 46rem; }
+a { color: var(--accent); }
+.sans, table, .meta, .caveat, nav, footer, .tag {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.meta { color: var(--muted); font-size: .85rem; margin: 0 0 1.4rem; }
+.meta span + span::before { content: "\00b7"; margin: 0 .55rem; }
+.caveat {
+  background: var(--warn-bg); color: var(--warn-fg); border-radius: 4px;
+  padding: .7rem .95rem; font-size: .88rem; max-width: none; margin: 1rem 0 0;
+}
+.scroll { overflow-x: auto; margin: .6rem 0 .4rem; }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+th, td { text-align: left; padding: .5rem .65rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.unavailable td { background: var(--surface); }
+.note { color: var(--muted); font-size: .82rem; max-width: 46rem; }
+.tag { display: inline-block; border: 1px solid var(--rule); border-radius: 3px; padding: 0 .35rem; font-size: .72rem; color: var(--muted); margin-left: .3rem; white-space: nowrap; }
+details summary { cursor: pointer; }
+details p { font-size: .82rem; color: var(--muted); }
+nav { font-size: .85rem; margin-bottom: 1.6rem; }
+footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); }
+ul.links { padding-left: 1.1rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: .9rem; }
+.ext { width: .75em; height: .75em; vertical-align: -.05em; margin-left: .2em; fill: none; stroke: currentColor; stroke-width: 1.6; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; font-size: .88rem; font-family: ui-sans-serif, system-ui, sans-serif; }
+dt { color: var(--muted); } dd { margin: 0; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ext" viewBox="0 0 16 16"><path d="M9 2h5v5M14 2 7 9M12 10v3.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5H7"/></symbol></svg>
+<div class="wrap">
+<nav><a href="../index.html">Scoreboard</a></nav><h1>mcp-guard (SaravanaGuhan/mcp-guard)</h1><p class="meta"><span>Corpus version <code>v1-0ef4bd851ab8</code></span><span>Generated 2026-09-17T20:16:43+00:00</span><span>5 runs per scanner</span></p><p class="caveat">Recall is measured against a small synthetic corpus of deliberately vulnerable MCP servers, not against real-world MCP servers in the wild. A high score here is not a safety certification.</p><dl><dt>Scanner id</dt><dd>mcp-guard</dd><dt>Scanner version</dt><dd>2.0.0</dd><dt>Adapter version</dt><dd>1.0.0</dd><dt>Configuration</dt><dd>default</dd><dt>Requires signup</dt><dd>no</dd><dt>Stages attempted</dt><dd>static</dd><dt>Runs</dt><dd>5</dd><dt>Classes not attempted</dt><dd>A4, A5, A6</dd></dl><h2>Per-class recall</h2><div class="scroll"><table><tr><th>Class</th><th>Recall, mean (min-max)</th></tr><tr><td>A1</td><td class="num">0.00 (0.00-0.00)</td></tr><tr><td>A2</td><td class="num">0.00 (0.00-0.00)</td></tr><tr><td>A3</td><td class="num">0.00 (0.00-0.00)</td></tr><tr><td>A4</td><td class="num">n/a</td></tr><tr><td>A5</td><td class="num">n/a</td></tr><tr><td>A6</td><td class="num">n/a</td></tr><tr><td>A7</td><td class="num">1.00 (1.00-1.00)</td></tr><tr><td>A8</td><td class="num">1.00 (1.00-1.00)</td></tr><tr><td>A9</td><td class="num">0.00 (0.00-0.00)</td></tr><tr><td>A10</td><td class="num">1.00 (1.00-1.00)</td></tr></table></div><h2>Overall</h2><div class="scroll"><table><tr><td>Recall</td><td class="num">0.50 (0.50-0.50)</td></tr><tr><td>Precision</td><td class="num">0.67 (0.67-0.67)</td></tr><tr><td>False positives and near miss, mean per run</td><td class="num">2.00 false positives; 0.00 near miss</td></tr><tr><td>Unmapped findings, mean per run</td><td class="num">0.00</td></tr></table></div><h2>Notes</h2><ul><li>Does not attempt runtime; those items are excluded from its denominator rather than counted as misses.</li><li>zero variance across 5 runs: every per-class recall was identical run to run. Reported as a finding about reproducibility, not as an absence of data</li></ul><footer><h2 style="margin-top:0">Methodology</h2><ul class="links"><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/scoring.md" rel="noopener">Scoring<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/taxonomy.md" rel="noopener">Attack taxonomy<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/governance.md#contesting-a-result" rel="noopener">Governance and dispute process<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/mapping-rationale.md" rel="noopener">Mapping rationale<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/decisions.md" rel="noopener">Decision log<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li></ul><p>Source and raw results: <a href="https://github.com/falc0n007/mcp-sec-bench" rel="noopener">mcp-sec-bench<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>. This benchmark is vendor-neutral and does not rank scanners; there is no combined score by design.</p></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,1 @@
+[![mcp-sec-bench: Cisco mcp-scanner](https://img.shields.io/endpoint?url=https%3A%2F%2Ffalc0n007.github.io%2Fmcp-sec-bench%2Fbadges%2Fcisco-mcp-scanner.json)](https://falc0n007.github.io/mcp-sec-bench/scanners/cisco-mcp-scanner.html)

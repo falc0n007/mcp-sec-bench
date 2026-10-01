@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mcp-sec-bench scoreboard</title>
+<style>
+:root {
+  --bg: #fbfaf8; --fg: #1d1c1a; --muted: #67645e; --rule: #dedbd4;
+  --surface: #f3f1ec; --accent: #1f5f8b; --warn-bg: #f7eed8; --warn-fg: #6b4b05;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161514; --fg: #e8e6e1; --muted: #a09c93; --rule: #34322e;
+    --surface: #1e1d1b; --accent: #7db7e0; --warn-bg: #2d2615; --warn-fg: #e6cf8f;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 1.25rem; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+.wrap { max-width: 68rem; margin: 0 auto; padding: 2.5rem 0 4rem; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .4rem; letter-spacing: -.01em; }
+h2 { font-size: 1.2rem; margin: 2.6rem 0 .6rem; }
+p { max-width: 46rem; }
+a { color: var(--accent); }
+.sans, table, .meta, .caveat, nav, footer, .tag {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.meta { color: var(--muted); font-size: .85rem; margin: 0 0 1.4rem; }
+.meta span + span::before { content: "\00b7"; margin: 0 .55rem; }
+.caveat {
+  background: var(--warn-bg); color: var(--warn-fg); border-radius: 4px;
+  padding: .7rem .95rem; font-size: .88rem; max-width: none; margin: 1rem 0 0;
+}
+.scroll { overflow-x: auto; margin: .6rem 0 .4rem; }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+th, td { text-align: left; padding: .5rem .65rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.unavailable td { background: var(--surface); }
+.note { color: var(--muted); font-size: .82rem; max-width: 46rem; }
+.tag { display: inline-block; border: 1px solid var(--rule); border-radius: 3px; padding: 0 .35rem; font-size: .72rem; color: var(--muted); margin-left: .3rem; white-space: nowrap; }
+details summary { cursor: pointer; }
+details p { font-size: .82rem; color: var(--muted); }
+nav { font-size: .85rem; margin-bottom: 1.6rem; }
+footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); }
+ul.links { padding-left: 1.1rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: .9rem; }
+.ext { width: .75em; height: .75em; vertical-align: -.05em; margin-left: .2em; fill: none; stroke: currentColor; stroke-width: 1.6; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; font-size: .88rem; font-family: ui-sans-serif, system-ui, sans-serif; }
+dt { color: var(--muted); } dd { margin: 0; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ext" viewBox="0 0 16 16"><path d="M9 2h5v5M14 2 7 9M12 10v3.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5H7"/></symbol></svg>
+<div class="wrap">
+<h1>mcp-sec-bench scoreboard</h1><p class="meta"><span>Corpus version <code>v1-0ef4bd851ab8</code></span><span>Generated 2026-09-17T20:16:43+00:00</span><span>5 runs per scanner</span></p><p class="caveat">Recall is measured against a small synthetic corpus of deliberately vulnerable MCP servers, not against real-world MCP servers in the wild. A high score here is not a safety certification.</p><h2>Per-class recall</h2><p class="note">The primary number. Each cell is the fraction of that attack class's corpus items the scanner found, as mean (min-max) over the runs. Aggregate recall hides how little the scanners' taxonomies overlap. <a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/taxonomy.md" rel="noopener">Class definitions<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>. <strong>n/a</strong> means the scanner never attempted that class (for example a static-only scanner and a runtime-only class), which is different from attempting it and missing. <strong>-</strong> means no data.</p><div class="scroll"><table><tr><th>Scanner</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>A6</th><th>A7</th><th>A8</th><th>A9</th><th>A10</th></tr><tr><td><a href="scanners/cisco-mcp-scanner.html">Cisco mcp-scanner</a><span class="tag">runtime only</span></td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td></tr><tr><td><a href="scanners/mcp-guard.html">mcp-guard (SaravanaGuhan/mcp-guard)</a><span class="tag">static only</span></td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">1.00 (1.00-1.00)</td><td class="num">1.00 (1.00-1.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">1.00 (1.00-1.00)</td></tr><tr><td><a href="scanners/ramparts.html">Ramparts</a><span class="tag">runtime only</span></td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td></tr><tr><td><a href="scanners/sentinel-scan-cli.html">sentinel-scan-cli (Ventrova)</a><span class="tag">runtime only</span></td><td class="num">0.00 (0.00-0.00)</td><td class="num">1.00 (1.00-1.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">0.00 (0.00-0.00)</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td><td class="num">n/a</td></tr><tr><td><a href="scanners/snyk-agent-scan.html">Snyk agent-scan (fka Invariant Labs mcp-scan)</a></td><td colspan="10">unavailable, reason given below</td></tr></table></div><h2>Overall recall and precision</h2><p class="note">Shown side by side and never combined into one number. Rows are alphabetical; position carries no meaning. Near misses are false positives on the right server with the wrong class; they earn no credit, and a large count is not evidence of near-competence. <a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/scoring.md" rel="noopener">How scores work<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>.</p><div class="scroll"><table><tr><th>Scanner</th><th>Requires signup</th><th>Runs</th><th>Recall (overall)</th><th>Precision (overall)</th><th>False positives and near miss</th><th>Unmapped</th></tr><tr><td><a href="scanners/cisco-mcp-scanner.html">Cisco mcp-scanner</a><span class="tag">runtime only</span></td><td>no</td><td class="num">5</td><td class="num">0.00 (0.00-0.00)</td><td class="num">-</td><td class="num">0.00 false positives; 0.00 near miss</td><td class="num">0.00</td></tr><tr><td><a href="scanners/mcp-guard.html">mcp-guard (SaravanaGuhan/mcp-guard)</a><span class="tag">static only</span></td><td>no</td><td class="num">5</td><td class="num">0.50 (0.50-0.50)</td><td class="num">0.67 (0.67-0.67)</td><td class="num">2.00 false positives; 0.00 near miss</td><td class="num">0.00</td></tr><tr><td><a href="scanners/ramparts.html">Ramparts</a><span class="tag">runtime only</span></td><td>no</td><td class="num">5</td><td class="num">0.00 (0.00-0.00)</td><td class="num">-</td><td class="num">0.00 false positives; 0.00 near miss</td><td class="num">0.00</td></tr><tr><td><a href="scanners/sentinel-scan-cli.html">sentinel-scan-cli (Ventrova)</a><span class="tag">runtime only</span></td><td>no</td><td class="num">5</td><td class="num">0.17 (0.17-0.17)</td><td class="num">0.50 (0.50-0.50)</td><td class="num">1.00 false positives; 1.00 near miss</td><td class="num">40.00</td></tr><tr class="unavailable"><td><a href="scanners/snyk-agent-scan.html">Snyk agent-scan (fka Invariant Labs mcp-scan)</a></td><td>yes</td><td class="num">0</td><td colspan="4"><details><summary>Unavailable: SNYK_TOKEN is not set.</summary><p>SNYK_TOKEN is not set. snyk-agent-scan 0.6.3 gates ALL analysis behind this token, confirmed by recon (docs/scanner-survey.md): run without it, the tool still connects to the target and enumerates its tools, then exits 1 printing &#x27;To use Agent Scan, set the SNYK_TOKEN environment variable. To get a token, go to https://app.snyk.io/account (API Token -&gt; KEY -&gt; click to show).&#x27; and produces no findings. This adapter does not attempt a tokenless partial scan -- there is nothing a partial run of this tool would legitimately measure. Set SNYK_TOKEN (free signup) to enable this row. Note before doing so: snyk-agent-scan analysis is SERVER-SIDE: the scan payload it assembles (per docs/scanner-survey.md recon) includes scan_user_info (hostname, username, ip_address, anonymous_identifier) and scan_metadata (cli_version), sent to Snyk. A run is not reproducible offline, may change without a version bump, and shares information about the target (here, a corpus server) with a vendor. Material to disclose alongside any published number for this row.</p></details></td></tr></table></div><footer><h2 style="margin-top:0">Methodology</h2><ul class="links"><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/scoring.md" rel="noopener">Scoring<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/taxonomy.md" rel="noopener">Attack taxonomy<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/governance.md#contesting-a-result" rel="noopener">Governance and dispute process<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/mapping-rationale.md" rel="noopener">Mapping rationale<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li><li><a href="https://github.com/falc0n007/mcp-sec-bench/blob/main/docs/decisions.md" rel="noopener">Decision log<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></li></ul><p>Source and raw results: <a href="https://github.com/falc0n007/mcp-sec-bench" rel="noopener">mcp-sec-bench<svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>. This benchmark is vendor-neutral and does not rank scanners; there is no combined score by design.</p></footer>
+</div>
+</body>
+</html>
