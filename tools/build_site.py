@@ -13,8 +13,10 @@ binding rules from docs/scoring.md and docs/governance.md:
 
 - Rows sort alphabetically by scanner id, never by score. There is no
   composite score, ranking, or grade anywhere on the page.
-- Per-class recall is the primary table. Overall recall and precision sit side
-  by side; every figure with a range reads "mean (min-max)" over the runs.
+- Per-class recall is the primary result, drawn as a detection matrix with
+  the figure printed under every mark. Overall recall and precision sit side
+  by side. The index prints a range only where runs disagreed and says so
+  when none did; scanner pages always print "mean (min-max)".
 - A class a scanner structurally cannot attempt reads "n/a", never "0.00".
   A statistic with no data reads "-", never "0.00".
 - near_miss is only ever rendered in the same cell as the false-positive count,
@@ -36,13 +38,14 @@ import html
 import re
 import sys
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from runner.models import CLASSES  # noqa: E402
+from runner.models import CLASS_STAGES, CLASSES  # noqa: E402
 from runner.results import load_results, validate_results  # noqa: E402
 
 REPO_URL = "https://github.com/falc0n007/mcp-sec-bench"
@@ -145,29 +148,104 @@ def false_positive_mean(scanner: dict[str, Any]) -> float | None:
 # Formatting
 # --------------------------------------------------------------------------
 
+#: Short names from docs/taxonomy.md, for the column key and the scanner pages.
+CLASS_NAMES: dict[str, str] = {
+    "A1": "Tool-description injection",
+    "A2": "Rug-pull",
+    "A3": "Cross-server tool shadowing",
+    "A4": "Response injection",
+    "A5": "Argument exfiltration",
+    "A6": "Authless endpoint",
+    "A7": "Hardcoded secrets",
+    "A8": "Unrestricted file read",
+    "A9": "Unrestricted env access",
+    "A10": "Command execution / allowlist bypass",
+}
+
+#: GitHub's anchors for the "## A1 — Tool-description injection" headings.
+CLASS_ANCHORS: dict[str, str] = {
+    "A1": "a1--tool-description-injection",
+    "A2": "a2--rug-pull-mutated-tool-definition-after-trust",
+    "A3": "a3--cross-server-tool-shadowing",
+    "A4": "a4--response-injection",
+    "A5": "a5--argument-exfiltration",
+    "A6": "a6--authless-endpoint",
+    "A7": "a7--hardcoded-secrets",
+    "A8": "a8--unrestricted-file-read",
+    "A9": "a9--unrestricted-env-access",
+    "A10": "a10--command-execution--allowlist-bypass",
+}
+
+
+def class_groups() -> list[tuple[str, str, list[str]]]:
+    """Columns grouped by where a class can be detected (runner/models.py).
+
+    The grouping is information, not decoration: it is the reason a static-only
+    or runtime-only scanner has whole blocks it never attempts.
+    """
+    groups = [
+        ("Advertised metadata", "Creditable from source or from a live tools/list.",
+         [c for c in CLASSES if CLASS_STAGES[c] == {"static", "runtime"}]),
+        ("Live behaviour", "Only observable against a running server.",
+         [c for c in CLASSES if CLASS_STAGES[c] == {"runtime"}]),
+        ("Source code", "Only visible by reading the server's source.",
+         [c for c in CLASSES if CLASS_STAGES[c] == {"static"}]),
+    ]
+    return [g for g in groups if g[2]]
+
 
 def _esc(text: Any) -> str:
     return html.escape(str(text), quote=True)
 
 
 def fmt_stat(block: dict[str, Any] | None) -> str:
-    """'0.42 (0.33-0.50)', or '-' when there is no mean to show."""
+    """'0.42', or '0.42 (0.33–0.50)' when the runs disagreed; '-' with no mean.
+
+    When every run produced the same figure the range carries no information,
+    so it is dropped from the scoreboard and stated once in the notes instead.
+    Scanner pages use fmt_stat_full, which always prints the range.
+    """
+    if not block or block.get("mean") is None:
+        return NO_DATA
+    mean, lo, hi = block["mean"], block.get("min"), block.get("max")
+    if lo is None or hi is None or lo == hi:
+        return f"{mean:.2f}"
+    return f"{mean:.2f} ({lo:.2f}–{hi:.2f})"
+
+
+def fmt_stat_full(block: dict[str, Any] | None) -> str:
+    """'0.42 (0.33–0.50)': mean (min–max), always, for the scanner pages."""
     if not block or block.get("mean") is None:
         return NO_DATA
     mean, lo, hi = block["mean"], block.get("min"), block.get("max")
     if lo is None or hi is None:
         return f"{mean:.2f}"
-    return f"{mean:.2f} ({lo:.2f}-{hi:.2f})"
+    return f"{mean:.2f} ({lo:.2f}–{hi:.2f})"
 
 
-def fmt_class_cell(scanner: dict[str, Any], cls: str) -> str:
+def fmt_count(value: float | None) -> str:
+    """A per-run mean count without trailing zeros: 40, 1.2, 0.67."""
+    if value is None:
+        return NO_DATA
+    text = f"{value:.2f}".rstrip("0").rstrip(".")
+    return text or "0"
+
+
+def class_state(scanner: dict[str, Any], cls: str) -> tuple[str, float, str]:
+    """(state, fill fraction, label) for one matrix cell.
+
+    States: hit (found in every run), partial, miss (attempted, never found),
+    na (never attempted), nodata.
+    """
     block = (scanner["metrics"].get("recall_per_class") or {}).get(cls)
     if block is None or block.get("mean") is None:
         # Never attempted is a different fact from attempted and missed.
         if cls in (scanner.get("not_attempted_classes") or []):
-            return NOT_ATTEMPTED
-        return NO_DATA
-    return fmt_stat(block)
+            return "na", 0.0, NOT_ATTEMPTED
+        return "nodata", 0.0, NO_DATA
+    mean = block["mean"]
+    state = "hit" if mean >= 1.0 else "miss" if mean <= 0.0 else "partial"
+    return state, mean, fmt_stat(block)
 
 
 def fmt_fp_near_miss(scanner: dict[str, Any]) -> str:
@@ -176,16 +254,45 @@ def fmt_fp_near_miss(scanner: dict[str, Any]) -> str:
     if fp is None:
         return NO_DATA
     near = scanner["metrics"].get("near_miss_mean", 0.0)
-    return f"{fp:.2f} false positives; {near:.2f} near miss"
+    fp_word = "false positive" if fp == 1 else "false positives"
+    nm_word = "near miss" if near == 1 else "near misses"
+    return f"{fmt_count(fp)} {fp_word}, {fmt_count(near)} {nm_word}"
 
 
 def fmt_unmapped(scanner: dict[str, Any]) -> str:
-    return f"{scanner['metrics'].get('unmapped_mean', 0.0):.2f}"
+    return fmt_count(scanner["metrics"].get("unmapped_mean", 0.0))
+
+
+def fmt_generated(stamp: str) -> str:
+    """'17 September 2026, 20:16 UTC' from an ISO-8601 timestamp."""
+    try:
+        dt = datetime.fromisoformat(stamp).astimezone(timezone.utc)
+    except ValueError:
+        return stamp
+    return f"{dt.day} {dt:%B %Y}, {dt:%H:%M} UTC"
+
+
+def split_name(scanner: dict[str, Any]) -> tuple[str, str]:
+    """('mcp-guard', 'SaravanaGuhan/mcp-guard') from 'mcp-guard (SaravanaGuhan/mcp-guard)'."""
+    label = display_label(scanner)
+    m = re.match(r"^(.*?) \((.+)\)$", label)
+    return (m.group(1), m.group(2)) if m else (label, "")
 
 
 def _first_sentence(text: str) -> str:
     m = re.match(r"(.+?[.!?])(\s|$)", text.strip(), re.S)
     return m.group(1) if m else text.strip()
+
+
+def _all_runs_agree(scanners: list[dict[str, Any]]) -> bool:
+    for s in scanners:
+        m = s.get("metrics") or {}
+        blocks = list((m.get("recall_per_class") or {}).values())
+        blocks += [m.get("recall_overall"), m.get("precision_overall")]
+        for b in blocks:
+            if b and b.get("min") is not None and b.get("min") != b.get("max"):
+                return False
+    return True
 
 
 # --------------------------------------------------------------------------
@@ -194,52 +301,112 @@ def _first_sentence(text: str) -> str:
 
 STYLE = """
 :root {
-  --bg: #fbfaf8; --fg: #1d1c1a; --muted: #67645e; --rule: #dedbd4;
-  --surface: #f3f1ec; --accent: #1f5f8b; --warn-bg: #f7eed8; --warn-fg: #6b4b05;
+  --paper: #f7f8f6; --raised: #eef0ed; --ink: #1b2128; --muted: #5d6670;
+  --rule: #d6dad8; --signal: #2f5bd3; --hatch: #b9c0c6;
+  --caution: #8a5a00; --caution-rule: #d9a33a;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #161514; --fg: #e8e6e1; --muted: #a09c93; --rule: #34322e;
-    --surface: #1e1d1b; --accent: #7db7e0; --warn-bg: #2d2615; --warn-fg: #e6cf8f;
+    --paper: #12161b; --raised: #1a2027; --ink: #e4e8ec; --muted: #97a1ab;
+    --rule: #2b323a; --signal: #86a8ff; --hatch: #46505a;
+    --caution: #e7c27a; --caution-rule: #a5782a;
     color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
 body {
-  margin: 0; padding: 0 1.25rem; background: var(--bg); color: var(--fg);
-  font: 16px/1.55 ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  margin: 0; padding: 0 1.25rem; background: var(--paper); color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
-.wrap { max-width: 68rem; margin: 0 auto; padding: 2.5rem 0 4rem; }
-h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .4rem; letter-spacing: -.01em; }
-h2 { font-size: 1.2rem; margin: 2.6rem 0 .6rem; }
-p { max-width: 46rem; }
-a { color: var(--accent); }
-.sans, table, .meta, .caveat, nav, footer, .tag {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+.wrap { max-width: 72rem; margin: 0 auto; padding: 3.5rem 0 4rem; }
+a { color: var(--signal); text-underline-offset: .15em; text-decoration-thickness: 1px; }
+a:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 2px; }
+h1 { font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.1; letter-spacing: -.025em; font-weight: 700; margin: 0; }
+h2 { font-size: 1.3rem; letter-spacing: -.01em; font-weight: 650; margin: 3.25rem 0 .35rem; }
+h3 { font-size: 1rem; font-weight: 600; margin: 2rem 0 .5rem; }
+p { max-width: 42rem; margin: .5rem 0; }
+.lede { font-size: 1.15rem; color: var(--muted); margin: .6rem 0 1.5rem; max-width: 38rem; }
+.facts { display: flex; flex-wrap: wrap; gap: .4rem 2rem; margin: 0 0 1.5rem; padding: 0; list-style: none; font-size: .875rem; }
+.facts li { display: flex; flex-direction: column; }
+.facts .k { color: var(--muted); font-size: .8rem; }
+.facts code { font: inherit; }
+.caveat { border-left: 3px solid var(--caution-rule); padding: .15rem 0 .15rem .9rem; color: var(--caution); font-size: .925rem; max-width: 46rem; }
+.note { color: var(--muted); font-size: .9rem; }
+.scroll { overflow-x: auto; margin: 1.25rem 0 .75rem; }
+
+/* Detection matrix: the one loud element on the page. */
+table.matrix { border-collapse: separate; border-spacing: 0; min-width: 100%; }
+.matrix th, .matrix td { padding: 0; font-weight: normal; }
+.matrix .group th { text-align: left; font-size: .8rem; color: var(--muted); padding: 0 .5rem .35rem; border-bottom: 1px solid var(--rule); }
+.matrix .group th + th { border-left: 1.25rem solid var(--paper); }
+.matrix .codes th { font-size: .8rem; font-weight: 600; padding: .5rem 0 .6rem; text-align: center; min-width: 3.6rem; }
+.matrix .codes th abbr { text-decoration: none; cursor: help; }
+.matrix tbody th { text-align: left; padding: .7rem 1.25rem .7rem 0; vertical-align: middle; min-width: 12rem; position: sticky; left: 0; background: var(--paper); z-index: 1; }
+.matrix tbody tr + tr > * { border-top: 1px solid var(--rule); }
+.matrix td.gap-before, .matrix th.gap-before { padding-left: 1.25rem; }
+.name { display: block; font-weight: 600; }
+.name a { color: var(--ink); text-decoration: none; }
+.name a:hover { color: var(--signal); text-decoration: underline; }
+.sub { display: block; color: var(--muted); font-size: .8rem; font-weight: normal; }
+.cell { text-align: center; vertical-align: middle; padding: .7rem 0; }
+.mark {
+  display: block; width: 1.75rem; height: 1.75rem; margin: 0 auto .3rem; border-radius: 3px;
+  border: 1.5px solid var(--muted);
+  background: linear-gradient(to top, var(--signal) calc(var(--r, 0) * 100%), transparent 0);
 }
-.meta { color: var(--muted); font-size: .85rem; margin: 0 0 1.4rem; }
-.meta span + span::before { content: "\\00b7"; margin: 0 .55rem; }
-.caveat {
-  background: var(--warn-bg); color: var(--warn-fg); border-radius: 4px;
-  padding: .7rem .95rem; font-size: .88rem; max-width: none; margin: 1rem 0 0;
+.cell[data-state="hit"] .mark, .cell[data-state="partial"] .mark { border-color: var(--signal); }
+.cell[data-state="na"] .mark {
+  border: 1.5px dashed var(--hatch);
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 5px);
 }
-.scroll { overflow-x: auto; margin: .6rem 0 .4rem; }
-table { border-collapse: collapse; width: 100%; font-size: .85rem; }
-th, td { text-align: left; padding: .5rem .65rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-weight: 600; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
-td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-tr.unavailable td { background: var(--surface); }
-.note { color: var(--muted); font-size: .82rem; max-width: 46rem; }
-.tag { display: inline-block; border: 1px solid var(--rule); border-radius: 3px; padding: 0 .35rem; font-size: .72rem; color: var(--muted); margin-left: .3rem; white-space: nowrap; }
+.cell[data-state="nodata"] .mark { border: 1.5px dotted var(--hatch); }
+.v { display: block; font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.cell[data-state="hit"] .v, .cell[data-state="partial"] .v { color: var(--ink); font-weight: 600; }
+.unavail { text-align: left; color: var(--muted); font-size: .9rem; padding: .7rem 0 .7rem 0; vertical-align: middle; }
+.unavail strong { color: var(--ink); font-weight: 600; }
+
+.legend { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; margin: .5rem 0 0; padding: 0; list-style: none; font-size: .85rem; color: var(--muted); }
+.legend li { display: flex; align-items: center; gap: .5rem; }
+.legend .cell { padding: 0; display: inline-block; }
+.legend .mark { width: 1rem; height: 1rem; margin: 0; border-radius: 2px; }
+.key { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem 2rem; margin: 1.75rem 0 0; font-size: .875rem; }
+.key h3 { margin: 0 0 .3rem; font-size: .875rem; }
+.key p { margin: 0 0 .4rem; color: var(--muted); font-size: .8rem; }
+.key dl { display: grid; grid-template-columns: 2.4rem 1fr; gap: .15rem .25rem; margin: 0; }
+.key dt { font-weight: 600; } .key dd { margin: 0; }
+
+/* Plain data tables. */
+table.data { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.data th, .data td { text-align: left; padding: .65rem 1rem .65rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.data thead th { font-size: .8rem; font-weight: 600; color: var(--muted); border-bottom-color: var(--ink); vertical-align: bottom; }
+.data td.num, .data th.num { text-align: right; white-space: nowrap; }
+.data .fp { white-space: nowrap; padding-left: 1.5rem; }
+.overall .name, .overall .sub { white-space: nowrap; }
+.overall { min-width: 46rem; }
+.narrow { max-width: 44rem; }
+.overall th:last-child, .overall td:last-child { width: 100%; }
+.data tbody th { font-weight: normal; }
+.data tr.unavailable td { color: var(--muted); }
 details summary { cursor: pointer; }
-details p { font-size: .82rem; color: var(--muted); }
-nav { font-size: .85rem; margin-bottom: 1.6rem; }
-footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); }
-ul.links { padding-left: 1.1rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: .9rem; }
-.ext { width: .75em; height: .75em; vertical-align: -.05em; margin-left: .2em; fill: none; stroke: currentColor; stroke-width: 1.6; }
-dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; font-size: .88rem; font-family: ui-sans-serif, system-ui, sans-serif; }
-dt { color: var(--muted); } dd { margin: 0; }
+details p { font-size: .85rem; color: var(--muted); max-width: 48rem; }
+
+.tag { display: inline-block; font-size: .72rem; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 0 .45rem; margin-top: .2rem; white-space: nowrap; font-weight: normal; }
+nav { font-size: .9rem; margin-bottom: 2rem; }
+dl.facts-list { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1.5rem; font-size: .9rem; margin: 1.5rem 0 0; }
+dl.facts-list dt { color: var(--muted); } dl.facts-list dd { margin: 0; }
+footer { margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: .875rem; color: var(--muted); }
+footer h2 { margin: 0 0 .5rem; font-size: 1rem; color: var(--ink); }
+ul.links { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; padding: 0; margin: 0 0 1rem; list-style: none; }
+.ext { width: .7em; height: .7em; vertical-align: -.02em; margin-left: .2em; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 40rem) {
+  .wrap { padding-top: 2rem; }
+  .matrix tbody th { min-width: 9rem; padding-right: .75rem; }
+  .data { font-size: .85rem; }
+}
 """.strip()
 
 ICON_DEFS = (
@@ -266,19 +433,22 @@ def _page(title: str, body: str) -> str:
 
 
 def _meta(doc: dict[str, Any]) -> str:
-    return (
-        '<p class="meta">'
-        f'<span>Corpus version <code>{_esc(doc["corpus_version"])}</code></span>'
-        f'<span>Generated {_esc(doc["generated_at"])}</span>'
-        f'<span>{_esc(doc["runs_per_scanner"])} runs per scanner</span></p>'
+    facts = [
+        ("Corpus version", f'<code>{_esc(doc["corpus_version"])}</code>'),
+        ("Benchmark run", _esc(fmt_generated(doc["generated_at"]))),
+        ("Runs per scanner", _esc(doc["runs_per_scanner"])),
+    ]
+    items = "".join(
+        f'<li><span class="k">{k}</span><span>{v}</span></li>' for k, v in facts
     )
+    return f'<ul class="facts">{items}</ul>'
 
 
 def _caveat() -> str:
     return f'<p class="caveat">{_esc(CAVEAT)}</p>'
 
 
-def _method_footer(prefix: str = "") -> str:
+def _method_footer() -> str:
     items = "".join(
         "<li>"
         + _ext_link(f"{DOCS_URL}/{doc}" + (f"#{anchor}" if anchor else ""), label)
@@ -286,7 +456,7 @@ def _method_footer(prefix: str = "") -> str:
         for label, doc, anchor in METHOD_LINKS
     )
     return (
-        "<footer><h2 style=\"margin-top:0\">Methodology</h2>"
+        "<footer><h2>Methodology</h2>"
         f'<ul class="links">{items}</ul>'
         f"<p>Source and raw results: {_ext_link(REPO_URL, 'mcp-sec-bench')}. "
         "This benchmark is vendor-neutral and does not rank scanners; there is "
@@ -294,10 +464,10 @@ def _method_footer(prefix: str = "") -> str:
     )
 
 
-def _flags(scanner: dict[str, Any]) -> str:
+def _stage_tag(scanner: dict[str, Any]) -> str:
     out = ""
     if scanner["metrics"].get("high_variance"):
-        out += '<span class="tag">high variance</span>'
+        out += '<span class="tag">high variance</span> '
     stages = scanner.get("stages_attempted") or []
     if stages and "runtime" not in stages:
         out += '<span class="tag">static only</span>'
@@ -306,86 +476,164 @@ def _flags(scanner: dict[str, Any]) -> str:
     return out
 
 
-def _unavailable_cell(reason: str) -> str:
+def _name_block(scanner: dict[str, Any], link_prefix: str = "", tags: bool = True) -> str:
+    name, sub = split_name(scanner)
+    href = f"{link_prefix}scanners/{scanner_slug(scanner)}.html"
+    out = f'<span class="name"><a href="{_esc(href)}">{_esc(name)}</a></span>'
+    if sub:
+        out += f'<span class="sub">{_esc(sub)}</span>'
+    if tags:
+        out += _stage_tag(scanner)
+    return out
+
+
+def _mark_cell(scanner: dict[str, Any], cls: str, gap: bool) -> str:
+    state, fill, label = class_state(scanner, cls)
+    words = {
+        "hit": "found in every run", "partial": "found in some runs",
+        "miss": "attempted, not found", "na": "not attempted", "nodata": "no data",
+    }[state]
+    title = f"{cls} {CLASS_NAMES[cls]}: {label} ({words})"
+    gap_cls = " gap-before" if gap else ""
     return (
-        "<details><summary>Unavailable: "
-        f"{_esc(_first_sentence(reason))}</summary><p>{_esc(reason)}</p></details>"
+        f'<td class="cell{gap_cls}" data-state="{state}" style="--r:{fill:.3f}" '
+        f'title="{_esc(title)}"><span class="mark" aria-hidden="true"></span>'
+        f'<span class="v">{_esc(label)}</span>'
+        f'<span class="sr"> {_esc(words)}</span></td>'
     )
 
 
-def _row_name(scanner: dict[str, Any]) -> str:
-    href = f"scanners/{scanner_slug(scanner)}.html"
-    return f'<a href="{_esc(href)}">{_esc(display_label(scanner))}</a>{_flags(scanner)}'
+def _matrix(scanners: list[dict[str, Any]]) -> str:
+    groups = class_groups()
+    group_row = '<tr class="group"><td></td>' + "".join(
+        f'<th scope="colgroup" colspan="{len(cols)}">{_esc(label)}</th>'
+        for label, _, cols in groups
+    ) + "</tr>"
+    codes = []
+    for gi, (_, _, cols) in enumerate(groups):
+        for ci, c in enumerate(cols):
+            gap = " gap-before" if gi > 0 and ci == 0 else ""
+            codes.append(
+                f'<th scope="col" class="{gap.strip()}"><abbr title="{_esc(CLASS_NAMES[c])}">{c}</abbr></th>'
+            )
+    code_row = '<tr class="codes"><td></td>' + "".join(codes) + "</tr>"
+
+    rows = []
+    for s in scanners:
+        reason = unavailable_reason(s)
+        head = f'<th scope="row">{_name_block(s)}</th>'
+        if reason is not None:
+            signup = " Requires an account to run." if s.get("requires_signup") else ""
+            rows.append(
+                f'<tr>{head}<td class="unavail" colspan="{len(CLASSES)}">'
+                f"<strong>Not measured.</strong> {_esc(_first_sentence(reason))}{signup}</td></tr>"
+            )
+            continue
+        cells = []
+        for gi, (_, _, cols) in enumerate(groups):
+            for ci, c in enumerate(cols):
+                cells.append(_mark_cell(s, c, gap=gi > 0 and ci == 0))
+        rows.append(f"<tr>{head}{''.join(cells)}</tr>")
+
+    return (
+        '<div class="scroll"><table class="matrix">'
+        f"<thead>{group_row}{code_row}</thead><tbody>{''.join(rows)}</tbody>"
+        "</table></div>"
+    )
 
 
-def _index_table(scanners: list[dict[str, Any]]) -> str:
+def _legend() -> str:
+    entries = [
+        ("hit", 1.0, "Found in every run"),
+        ("partial", 0.5, "Found in some runs, filled by recall"),
+        ("miss", 0.0, "Attempted, not found"),
+        ("na", 0.0, "Not attempted: outside what this scanner reads"),
+    ]
+    items = "".join(
+        f'<li><span class="cell" data-state="{st}" style="--r:{r}">'
+        f'<span class="mark" aria-hidden="true"></span></span>{_esc(text)}</li>'
+        for st, r, text in entries
+    )
+    return f'<ul class="legend">{items}</ul>'
+
+
+def _class_key() -> str:
+    blocks = []
+    for label, blurb, cols in class_groups():
+        rows = "".join(
+            f"<dt>{c}</dt><dd>"
+            f'<a href="{_esc(DOCS_URL)}/taxonomy.md#{CLASS_ANCHORS[c]}">{_esc(CLASS_NAMES[c])}</a></dd>'
+            for c in cols
+        )
+        blocks.append(
+            f"<div><h3>{_esc(label)}</h3><p>{_esc(blurb)}</p><dl>{rows}</dl></div>"
+        )
+    return f'<div class="key">{"".join(blocks)}</div>'
+
+
+def _overall_table(scanners: list[dict[str, Any]]) -> str:
     head = (
-        "<tr><th>Scanner</th><th>Requires signup</th><th>Runs</th>"
-        "<th>Recall (overall)</th><th>Precision (overall)</th>"
-        "<th>False positives and near miss</th><th>Unmapped</th></tr>"
+        "<thead><tr><th scope=\"col\">Scanner</th>"
+        '<th scope="col" class="num">Recall</th><th scope="col" class="num">Precision</th>'
+        '<th scope="col" class="fp">False positives and near misses, per run</th>'
+        '<th scope="col" class="num">Unmapped findings, per run</th>'
+        '<th scope="col">Requires signup</th></tr></thead>'
     )
     rows = []
     for s in scanners:
         signup = "yes" if s["requires_signup"] else "no"
         reason = unavailable_reason(s)
+        name = f'<th scope="row">{_name_block(s, tags=False)}</th>'
         if reason is not None:
             rows.append(
-                f'<tr class="unavailable"><td>{_row_name(s)}</td><td>{signup}</td>'
-                f'<td class="num">0</td><td colspan="4">{_unavailable_cell(reason)}</td></tr>'
+                f'<tr class="unavailable">{name}<td colspan="4">'
+                f"<details><summary>Not measured: {_esc(_first_sentence(reason))}</summary>"
+                f"<p>{_esc(reason)}</p></details></td><td>{signup}</td></tr>"
             )
             continue
         m = s["metrics"]
         rows.append(
-            f"<tr><td>{_row_name(s)}</td><td>{signup}</td>"
-            f'<td class="num">{_esc(s["runs"])}</td>'
+            f"<tr>{name}"
             f'<td class="num">{_esc(fmt_stat(m.get("recall_overall")))}</td>'
             f'<td class="num">{_esc(fmt_stat(m.get("precision_overall")))}</td>'
-            f'<td class="num">{_esc(fmt_fp_near_miss(s))}</td>'
-            f'<td class="num">{fmt_unmapped(s)}</td></tr>'
+            f'<td class="fp">{_esc(fmt_fp_near_miss(s))}</td>'
+            f'<td class="num">{fmt_unmapped(s)}</td>'
+            f"<td>{signup}</td></tr>"
         )
-    return f'<div class="scroll"><table>{head}{"".join(rows)}</table></div>'
-
-
-def _class_table(scanners: list[dict[str, Any]]) -> str:
-    head = "<tr><th>Scanner</th>" + "".join(f"<th>{c}</th>" for c in CLASSES) + "</tr>"
-    rows = []
-    for s in scanners:
-        if unavailable_reason(s) is not None:
-            cells = f'<td colspan="{len(CLASSES)}">unavailable, reason given below</td>'
-        else:
-            cells = "".join(
-                f'<td class="num">{_esc(fmt_class_cell(s, c))}</td>' for c in CLASSES
-            )
-        rows.append(f"<tr><td>{_row_name(s)}</td>{cells}</tr>")
-    return f'<div class="scroll"><table>{head}{"".join(rows)}</table></div>'
+    return f'<div class="scroll"><table class="data overall">{head}<tbody>{"".join(rows)}</tbody></table></div>'
 
 
 def render_index(doc: dict[str, Any], scanners: list[dict[str, Any]]) -> str:
     if not scanners:
         content = '<p class="note">No scanner results yet.</p>'
     else:
+        agree = (
+            f"All {doc['runs_per_scanner']} runs of every scanner produced identical "
+            "figures, so no ranges are shown. "
+            if _all_runs_agree(scanners) else
+            "Where runs disagreed, the range follows the mean as (min–max). "
+        )
         content = (
-            "<h2>Per-class recall</h2>"
-            '<p class="note">The primary number. Each cell is the fraction of that '
-            "attack class's corpus items the scanner found, as mean (min-max) over "
-            "the runs. Aggregate recall hides how little the scanners' taxonomies "
-            f"overlap. {_ext_link(f'{DOCS_URL}/taxonomy.md', 'Class definitions')}. "
-            "<strong>n/a</strong> means the scanner never attempted that class "
-            "(for example a static-only scanner and a runtime-only class), which is "
-            "different from attempting it and missing. <strong>-</strong> means no "
-            "data.</p>"
-            f"{_class_table(scanners)}"
+            "<h2>Detection by attack class</h2>"
+            '<p class="note">Per-class recall is the primary result: the share of '
+            "each class's planted flaws a scanner found. Classes are grouped by where "
+            "a flaw can be seen, which is why a scanner that only reads source, or "
+            f"only probes a live server, never attempts whole groups. {agree}</p>"
+            f"{_matrix(scanners)}{_legend()}{_class_key()}"
             "<h2>Overall recall and precision</h2>"
-            '<p class="note">Shown side by side and never combined into one number. '
-            "Rows are alphabetical; position carries no meaning. Near misses are "
-            "false positives on the right server with the wrong class; they earn no "
-            "credit, and a large count is not evidence of near-competence. "
-            f"{_ext_link(f'{DOCS_URL}/scoring.md', 'How scores work')}.</p>"
-            f"{_index_table(scanners)}"
+            '<p class="note">Side by side, never combined into one number. Rows are '
+            "alphabetical; position carries no meaning. A near miss is a false "
+            "positive on the right server with the wrong class: it earns no credit, "
+            "and a large count is not evidence of near-competence. Unmapped findings "
+            "matched no attack class and count neither for nor against a scanner. "
+            f"{_ext_link(f'{DOCS_URL}/scoring.md', 'How scores work')}</p>"
+            f"{_overall_table(scanners)}"
         )
     body = (
-        "<h1>mcp-sec-bench scoreboard</h1>"
-        + _meta(doc) + _caveat() + content + _method_footer()
+        "<header><h1>mcp-sec-bench</h1>"
+        '<p class="lede">How well MCP security scanners detect deliberately planted '
+        "flaws, measured against the same corpus under the same rules.</p>"
+        + _meta(doc) + _caveat() + "</header>" + content + _method_footer()
     )
     return _page("mcp-sec-bench scoreboard", body)
 
@@ -399,7 +647,7 @@ def _outcome_means(scanner: dict[str, Any]) -> dict[str, float]:
 
 
 def render_scanner(doc: dict[str, Any], scanner: dict[str, Any]) -> str:
-    name = display_label(scanner)
+    name, sub = split_name(scanner)
     reason = unavailable_reason(scanner)
     facts = [
         ("Scanner id", scanner["scanner_id"]),
@@ -416,35 +664,42 @@ def render_scanner(doc: dict[str, Any], scanner: dict[str, Any]) -> str:
     dl = "".join(f"<dt>{_esc(k)}</dt><dd>{_esc(v)}</dd>" for k, v in facts)
 
     parts = [
-        '<nav><a href="../index.html">Scoreboard</a></nav>',
-        f"<h1>{_esc(name)}</h1>",
-        _meta(doc), _caveat(), f"<dl>{dl}</dl>",
+        '<nav><a href="../index.html">Back to the scoreboard</a></nav>',
+        f"<header><h1>{_esc(name)}</h1>",
+        f'<p class="lede">{_esc(sub)}</p>' if sub else "",
+        _meta(doc), _caveat(), "</header>",
+        f'<dl class="facts-list">{dl}</dl>',
     ]
     if reason is not None:
         parts.append(
-            "<h2>Unavailable</h2><p>This scanner could not be run, so it has no "
+            "<h2>Not measured</h2><p>This scanner could not be run, so it has no "
             "scores. That is not the same as finding nothing.</p>"
             f"<p>{_esc(reason)}</p>"
         )
     else:
         m = scanner["metrics"]
+        class_rows = "".join(
+            f'<tr><th scope="row">{c}</th><td>{_esc(CLASS_NAMES[c])}</td>'
+            f'<td class="num">{_esc(fmt_class_full(scanner, c))}</td></tr>'
+            for c in CLASSES
+        )
         parts.append(
             "<h2>Per-class recall</h2>"
-            '<div class="scroll"><table><tr><th>Class</th><th>Recall, mean (min-max)</th></tr>'
-            + "".join(
-                f'<tr><td>{c}</td><td class="num">{_esc(fmt_class_cell(scanner, c))}</td></tr>'
-                for c in CLASSES
-            )
-            + "</table></div>"
+            '<p class="note">Mean over the runs, with (min–max). n/a means the '
+            "class is outside what this scanner reads; - means no data.</p>"
+            '<div class="scroll"><table class="data narrow"><thead><tr>'
+            '<th scope="col">Class</th><th scope="col">Name</th>'
+            '<th scope="col" class="num">Recall, mean (min–max)</th></tr></thead>'
+            f"<tbody>{class_rows}</tbody></table></div>"
             "<h2>Overall</h2>"
-            '<div class="scroll"><table>'
-            f'<tr><td>Recall</td><td class="num">{_esc(fmt_stat(m.get("recall_overall")))}</td></tr>'
-            f'<tr><td>Precision</td><td class="num">{_esc(fmt_stat(m.get("precision_overall")))}</td></tr>'
-            f'<tr><td>False positives and near miss, mean per run</td>'
+            '<div class="scroll"><table class="data narrow"><tbody>'
+            f'<tr><th scope="row">Recall</th><td class="num">{_esc(fmt_stat_full(m.get("recall_overall")))}</td></tr>'
+            f'<tr><th scope="row">Precision</th><td class="num">{_esc(fmt_stat_full(m.get("precision_overall")))}</td></tr>'
+            f'<tr><th scope="row">False positives and near misses, per run</th>'
             f'<td class="num">{_esc(fmt_fp_near_miss(scanner))}</td></tr>'
-            f'<tr><td>Unmapped findings, mean per run</td>'
+            f'<tr><th scope="row">Unmapped findings, per run</th>'
             f'<td class="num">{fmt_unmapped(scanner)}</td></tr>'
-            "</table></div>"
+            "</tbody></table></div>"
         )
         if m.get("high_variance"):
             detail = m.get("variance_detail") or {}
@@ -459,7 +714,16 @@ def render_scanner(doc: dict[str, Any], scanner: dict[str, Any]) -> str:
             "<h2>Notes</h2><ul>" + "".join(f"<li>{_esc(n)}</li>" for n in notes) + "</ul>"
         )
     parts.append(_method_footer())
-    return _page(f"{name} - mcp-sec-bench", "".join(parts))
+    return _page(f"{display_label(scanner)} - mcp-sec-bench", "".join(parts))
+
+
+def fmt_class_full(scanner: dict[str, Any], cls: str) -> str:
+    block = (scanner["metrics"].get("recall_per_class") or {}).get(cls)
+    if block is None or block.get("mean") is None:
+        if cls in (scanner.get("not_attempted_classes") or []):
+            return NOT_ATTEMPTED
+        return NO_DATA
+    return fmt_stat_full(block)
 
 
 def build_site(
