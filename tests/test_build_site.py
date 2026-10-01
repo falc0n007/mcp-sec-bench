@@ -108,32 +108,65 @@ def test_caveat_and_corpus_version_on_every_page(site):
         assert CORPUS in text
 
 
-def test_mean_and_range_shown(site):
-    assert "0.40 (0.20-0.60)" in _index(site)
+def test_mean_and_range_shown_where_runs_disagree(site):
+    # alpha's A1 ranged 0.20-0.60 over the runs: the index shows the range.
+    assert "0.40 (0.20\u201360)" not in _index(site)  # guard against a bad dash
+    assert "0.40 (0.20\u20130.60)" in _index(site)
+    assert "Where runs disagreed" in _index(site)
+
+
+def test_scanner_page_always_shows_mean_and_range(site):
+    alpha = (site / "scanners" / "alpha-scan.html").read_text(encoding="utf-8")
+    assert "Recall, mean (min\u2013max)" in alpha
+    assert "0.00 (0.00\u20130.00)" in alpha  # a real zero stays a zero (A7)
+
+
+def test_identical_runs_drop_ranges_and_say_so(tmp_path):
+    steady = _report(
+        "steady-scan",
+        recall_per_class_mean={"A1": 0.5}, recall_per_class_range={"A1": (0.5, 0.5)},
+        recall_overall_range=(0.3, 0.3), precision_range=(0.75, 0.75),
+    )
+    build_site.build_site(make_doc(reports=[steady], items={}), tmp_path)
+    page = _index(tmp_path)
+    assert "produced identical figures, so no ranges are shown" in page
+    assert not re.search(r"0\.50 \(\d", page)
+    steady_page = (tmp_path / "scanners" / "steady-scan.html").read_text(encoding="utf-8")
+    assert "0.50 (0.50\u20130.50)" in steady_page
 
 
 def test_recall_and_precision_side_by_side_not_combined(site):
     page = _index(site)
-    assert "Recall (overall)</th><th>Precision (overall)</th>" in page
+    assert '>Recall</th><th scope="col" class="num">Precision</th>' in page
 
 
 def test_not_attempted_is_na_and_missing_is_dash(site):
-    # A4 has a None mean and is not in not_attempted_classes for a static
-    # scanner whose stage covers... A4 is runtime-only, so it IS not attempted.
+    # A4 is runtime-only, so for this static scanner it is not attempted.
     alpha = (site / "scanners" / "alpha-scan.html").read_text(encoding="utf-8")
-    assert re.search(r"<td>A4</td><td class=\"num\">n/a</td>", alpha)
+    assert re.search(r'<th scope="row">A4</th><td>[^<]+</td><td class="num">n/a</td>', alpha)
     # A2 has no entry at all and is creditable by static: no data, not n/a.
-    assert re.search(r"<td>A2</td><td class=\"num\">-</td>", alpha)
-    assert "0.00 (0.00-0.00)" in alpha  # a real zero stays a zero (A7)
+    assert re.search(r'<th scope="row">A2</th><td>[^<]+</td><td class="num">-</td>', alpha)
+
+
+def test_matrix_distinguishes_not_attempted_from_missed(site):
+    page = _index(site)
+    row = page[page.index('href="scanners/alpha-scan.html"'):]
+    row = row[: row.index("</tr>")]
+    states = re.findall(r'data-state="(\w+)"[^>]*title="(A\d+) ', row)
+    by_class = {c: st for st, c in states}
+    assert by_class["A4"] == "na"
+    assert by_class["A2"] == "nodata"
+    assert by_class["A7"] == "miss"
+    assert by_class["A1"] == "partial"
 
 
 def test_near_miss_always_beside_false_positive_count(site):
     page = _index(site)
-    # alpha: items give (5 + 1) false positives over 5 runs = 1.20 per run.
-    assert "1.20 false positives; 1.00 near miss" in page
+    # alpha: items give (5 + 1) false positives over 5 runs = 1.2 per run.
+    assert "1.2 false positives, 1 near miss" in page
     # Every near-miss mention is in a cell that also names false positives.
     for cell in re.findall(r"<td[^>]*>([^<]*near miss[^<]*)</td>", page):
-        assert "false positives" in cell
+        assert "false positive" in cell
     assert "almost right" not in page.lower()
 
 
@@ -145,7 +178,7 @@ def test_near_miss_hidden_without_item_detail(tmp_path):
 
 def test_unavailable_row_shows_reason_and_signup(site):
     page = _index(site)
-    assert "Unavailable: SNYK_TOKEN is not set." in page
+    assert "Not measured: SNYK_TOKEN is not set." in page
     assert "SNYK_TOKEN is not set. More text." in page
     gamma = (site / "scanners" / "gamma-scan.html").read_text(encoding="utf-8")
     assert "SNYK_TOKEN is not set. More text." in gamma
@@ -153,7 +186,7 @@ def test_unavailable_row_shows_reason_and_signup(site):
 
 
 def test_requires_signup_column(site):
-    assert "<th>Requires signup</th>" in _index(site)
+    assert '<th scope="col">Requires signup</th>' in _index(site)
 
 
 def test_methodology_links_point_at_github(site):
