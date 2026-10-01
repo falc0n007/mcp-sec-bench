@@ -10,6 +10,7 @@
 #   make scoreboard  run the benchmark and render the scoreboard
 #   make disclosure-pack  build per-scanner result packs for disputes (SCANNER=id for one)
 #   make site        preview the static scoreboard site and badges locally
+#   make publish-site  publish the scoreboard site to GitHub Pages (gh-pages)
 #   make all         setup + images + lab-up + verify + scoreboard
 #
 # Scanner images are built from pinned Dockerfiles. Building them is separate
@@ -21,7 +22,7 @@ COMPOSE := docker compose -f lab/docker-compose.yml
 DOCKERFILES := runner/adapters/dockerfiles
 
 .DEFAULT_GOAL := help
-.PHONY: site help setup images lab-up lab-down lab-restart verify test scoreboard disclosure-pack clean all
+.PHONY: site publish-site help setup images lab-up lab-down lab-restart verify test scoreboard disclosure-pack clean all
 
 help:
 	@grep -E '^#   make [a-z-]+' Makefile | sed 's/^#   /  /'
@@ -86,8 +87,13 @@ clean:
 all: setup images lab-up verify scoreboard
 
 # Local preview of the static scoreboard site and badges, from the last dev run.
-# Writes under results/local/, which is gitignored. Publishing goes through
-# .github/workflows/scoreboard.yml only.
+# Writes under results/local/, which is gitignored.
 site:
 	$(PY) tools/build_site.py --results results/local/results.json --out results/local/site
 	$(PY) tools/badges.py --results results/local/results.json --out results/local/site/badges
+
+# The benchmark runs only on this machine, so publishing does too: build the
+# site from the last `make scoreboard`, refuse if anything credential-shaped
+# reached it, and commit it onto the gh-pages branch that GitHub Pages serves.
+publish-site:
+	$(PY) tools/publish_site.py --results results/local/results.json

@@ -1,6 +1,7 @@
 # Checks that need no Docker lab: manifests, the credential guard, and the unit
-# tests. The lab-dependent checks (smoke_server, verify_lab) run in
-# scoreboard.yml, where the lab is actually brought up.
+# tests. The lab-dependent checks (smoke_server, verify_lab) and the benchmark
+# itself run only on the maintainer's machine (`make verify`, `make scoreboard`);
+# CI never runs a scanner.
 
 name: ci
 
