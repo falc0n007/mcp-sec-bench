@@ -8,6 +8,8 @@
 #   make lab-up      bring the corpus online, egress blocked
 #   make verify      every correctness check the project has
 #   make scoreboard  run the benchmark and render the scoreboard
+#   make disclosure-pack  build per-scanner disclosure packs (SCANNER=id for one)
+#   make site        preview the static scoreboard site and badges locally
 #   make all         setup + images + lab-up + verify + scoreboard
 #
 # Scanner images are built from pinned Dockerfiles. Building them is separate
@@ -19,7 +21,7 @@ COMPOSE := docker compose -f lab/docker-compose.yml
 DOCKERFILES := runner/adapters/dockerfiles
 
 .DEFAULT_GOAL := help
-.PHONY: help setup images lab-up lab-down lab-restart verify test scoreboard clean all
+.PHONY: site help setup images lab-up lab-down lab-restart verify test scoreboard disclosure-pack clean all
 
 help:
 	@grep -E '^#   make [a-z-]+' Makefile | sed 's/^#   /  /'
@@ -71,8 +73,21 @@ test:
 scoreboard:
 	$(PY) -m runner.cli --scanners all --runs 5 --detail
 
+# Reads results/local/results.json, so run `make scoreboard` first. Writes to
+# results/local/disclosure/<scanner>/, which is gitignored: numbers stay
+# unpublished until the disclosure window has run.
+disclosure-pack:
+	$(PY) tools/disclosure_pack.py $(if $(SCANNER),--scanner $(SCANNER),--all)
+
 clean:
 	rm -rf .venv results/local __pycache__ .pytest_cache
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +
 
 all: setup images lab-up verify scoreboard
+
+# Local preview of the static scoreboard site and badges, from the last dev run.
+# Writes under results/local/, which is gitignored. Publishing goes through
+# .github/workflows/scoreboard.yml only.
+site:
+	$(PY) tools/build_site.py --results results/local/results.json --out results/local/site
+	$(PY) tools/badges.py --results results/local/results.json --out results/local/site/badges

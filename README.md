@@ -25,6 +25,18 @@ reader ever finds a scoreboard whose publisher quietly became a competitor.
 
 ---
 
+## Add your scanner
+
+If you maintain an MCP security scanner, or use one that is not measured here,
+you can add it. A submission is an adapter, a pinned Dockerfile, a mapping file
+that states why each of your tool's labels was or was not credited to an attack
+class, and tests. Vendors may submit for their own tool; authorship is disclosed
+on the scoreboard row, and your results reach you for review before anyone else.
+
+**[Adding a scanner: the walkthrough](docs/adding-a-scanner.md)**
+
+---
+
 ## Scoreboard
 
 **No scoreboard table is published yet. The disclosure round is running now.**
@@ -63,6 +75,7 @@ produced by:
 | [The lab](lab/README.md) | Bringing the sandboxed corpus online, and how egress is contained |
 | [The runner](runner/README.md) | How scanner output becomes a score, and the separations that keep it reviewable |
 | [Mapping rationale](docs/mapping-rationale.md) | Every decision translating a scanner's vocabulary into ours |
+| [Adding a scanner](docs/adding-a-scanner.md) | The eligibility criteria, the adapter contract, the mapping file, the tests, and what happens after you submit |
 | [Scanner survey](docs/scanner-survey.md) | What each candidate scanner actually is, verified by installing and running it |
 
 ## Why this exists
@@ -130,7 +143,7 @@ an honest account of the dual-use tradeoff, is in [ethics.md](docs/ethics.md).
 | 0 — Scope and neutrality design | **Complete** |
 | 1 — Corpus | **Complete** |
 | 2 — Runner and normalization | **Complete** |
-| 3 — Private disclosure round | Next |
+| 3 — Private disclosure round | In progress (round 1) |
 | 4 — Public launch | Not started |
 
 ## Running it
@@ -148,15 +161,15 @@ make scoreboard # run the benchmark and render the result
 `make scoreboard` writes to `results/local/`, which is gitignored, so a
 development run can never be mistaken for a published score.
 
-Four adapters are wired: three run credential-free, and one is published as
-unavailable because a token gates all of its analysis. A scanner we cannot run
+Five adapters are wired: four run credential-free, and one (Snyk agent-scan) is
+published as unavailable because a token gates all of its analysis. A scanner we cannot run
 still gets a row carrying the reason, because omitting it would quietly turn
 "we could not run this" into "this was not considered".
 
 ## Adding your scanner
 
-The submission path is a Phase 4 deliverable, but the inclusion criteria are
-already fixed and are not negotiated case by case — a scanner is eligible when
+The walkthrough is [docs/adding-a-scanner.md](docs/adding-a-scanner.md). The
+inclusion criteria are fixed and are not negotiated case by case — a scanner is eligible when
 it is reproducibly runnable without a sales call, publicly obtainable,
 containerizable, produces parseable output, and is licensed compatibly with
 having its output published. An account requirement is disclosed, not

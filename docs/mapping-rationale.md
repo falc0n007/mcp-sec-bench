@@ -1,10 +1,10 @@
 # Taxonomy mapping rationale
 
-Status: **mechanism and procedure locked; label tables empty.**
+Status: **mechanism and procedure locked; label tables populated from captured output (Snyk's remain unverified).**
 
 This document is the public record of every judgment call that converts a
 scanner's own vocabulary into the classes in [taxonomy.md](taxonomy.md). It is
-written before any scanner label has been captured, for the same reason
+written before any scanner label had been captured, for the same reason
 [scoring.md](scoring.md) and [governance.md](governance.md) were written before
 any result existed: a procedure published after the numbers is a defence of the
 numbers.
@@ -273,70 +273,180 @@ A worked example of the both-positions shape is
 
 ## 10. Per-scanner mapping tables
 
-> **Empty by design, as of 2026-09-17.** No scanner's output vocabulary has
-> been captured yet, and which of the candidate tools exist and run
-> reproducibly is still being verified. **This section stays empty until an
-> adapter has run the tool and its raw output is committed.** Nothing below is
-> a real label. Inventing plausible-looking vendor labels would poison the
-> benchmark at precisely its most contestable point, so the placeholder tables
-> carry no rows rather than illustrative ones; the illustrative rows live in
-> `mapping/example-scanner.json`, prefixed `EXAMPLE_` so they cannot be
-> mistaken for a vocabulary.
+> **Status as of the Phase 3 disclosure round.** Four tables below record labels
+> captured from real output this project produced. One, Snyk's, is **unverified**:
+> a token gates all of that tool's analysis, so no real output has ever been
+> observed and its labels are best guesses from documentation. Nothing in this
+> section is a label we invented; the invented ones live in
+> `mapping/example-scanner.json`, prefixed `EXAMPLE_`.
 
-Each table is generated from that scanner's file in `mapping/` and has these
-columns:
+**The mapping files are the source of truth.** Each table is derived from that
+scanner's file in `mapping/`, and where this document and a file disagree the
+file is what the runner applies. The tables carry the decision, its identifier,
+our confidence, and the first sentence of the rationale. The full rationale,
+the quoted present-when test, the classes considered and rejected, and the
+decision date are in the file, and every one of them is also sent to the
+scanner's maintainers in the disclosure pack. Every label has an entry,
+including each one left unmapped, because an unmapped label with no reasoning
+is indistinguishable from one we never looked at.
 
-| Raw label (verbatim) | Stage scope | Class | Rationale | Confidence | Status |
-| --- | --- | --- | --- | --- | --- |
+Columns: `Class` is the class credited, or `unmapped` with the reason code from
+`mapping/schema.json`. `Status` is `accepted`, or `provisional` where the entry
+was drafted before the label was seen in real output or rests on a reading we
+expect to be argued with. No entry is currently `disputed`.
 
-Candidate scanners, named in [project-plan.md](project-plan.md) as a starting
-list and **not yet verified to exist, be obtainable, or be runnable**:
+Provenance values, from the schema: `captured-from-real-output` means every
+label was copied verbatim from output this project produced and the capture is
+committed; `unverified` means the labels come from documentation or a third
+party and have not been observed in output we ran.
 
-### mcp-scanner (Cisco) — *unverified candidate*
+### mcp-scanner (Cisco)
 
-Mapping file: not created. Labels captured: none. Adapter: not started.
+Mapping file: `mapping/cisco-mcp-scanner.json`. Scanner version(s) checked: 4.8.4. Adapter version: 1.0.0. Provenance: **captured-from-real-output**. Matched on: `findings.<analyzer>.threat_names[]`. 8 entries: 1 mapped, 7 unmapped.
 
-| Raw label (verbatim) | Stage scope | Class | Rationale | Confidence | Status |
-| --- | --- | --- | --- | --- | --- |
-| *(no labels captured)* | | | | | |
+Labels were copied from output of the pinned image; the captures are committed under `tests/fixtures/cisco-mcp-scanner/`. Only one of the eight labels is mapped.
 
-Expected to need the R3 stage split if a single label covers its YARA, LLM-judge
-and behavioural engines; noted as an expectation, not a finding.
+| Raw label (verbatim) | Stage scope | Class | Rationale ID | Confidence | Status | Rationale (first sentence) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `PROMPT INJECTION` | any | A1 | MR-cisco-mcp-scanner-001 | medium | accepted | This is the only Cisco label that fires anywhere on this corpus, so it is the only entry that moves a number, and it is worth being precise about what it costs the tool. |
+| `TOOL POISONING` | any | unmapped: no-defensible-single-class | MR-cisco-mcp-scanner-002 | medium | accepted | Read the rule rather than the name and this label turns out to straddle our line rather than sit on either side of it. |
+| `INJECTION ATTACK` | any | unmapped: no-defensible-single-class | MR-cisco-mcp-scanner-003 | high | accepted | One string, three rules, and the three land on opposite sides of our scope boundary: command injection is A10's subject, SQL injection is explicitly excluded by taxonomy.md, and embedded script payloads are neither. |
+| `CODE EXECUTION` | any | unmapped: insufficient-specificity | MR-cisco-mcp-scanner-004 | high | accepted | The contrast that decides this entry is with another scanner in the same benchmark. |
+| `CREDENTIAL HARVESTING` | any | unmapped: no-defensible-single-class | MR-cisco-mcp-scanner-005 | medium | accepted | docs/mapping-rationale.md section 11 item 3 names A7-vs-A9 as the most likely first dispute in the whole benchmark, and this label is that dispute in its purest form: a single vendor string covering both the credential literal and the environment-variable channel, with our two classes each explicitly disclaiming the other's half. |
+| `DATA EXFILTRATION` | any | unmapped: insufficient-specificity | MR-cisco-mcp-scanner-006 | high | accepted | The name is close enough to A5 that mapping it would look obvious, which is the reason to be careful. |
+| `SYSTEM MANIPULATION` | any | unmapped: insufficient-specificity | MR-cisco-mcp-scanner-007 | high | accepted | This label bundles at least four unrelated properties -- environment access, destructive file operations, permission and privilege changes, and process control -- and brushes three of our classes without satisfying any of their tests. |
+| `unknown` | any | unmapped: informational-only | MR-cisco-mcp-scanner-008 | high | accepted | The readiness analyzer is not in this adapter's default configuration, for reasons the capture makes plain: it reports HIGH on every tool of every server for operational-maturity properties such as a missing timeout, seven findings per tool, with no taxonomy crosswalk attached and the literal threat name `unknown`. |
 
-### agent-scan / Invariant mcp-scan (Snyk) — *unverified candidate*
+### mcp-guard (community)
 
-Mapping file: not created. Labels captured: none. Adapter: not started.
+Mapping file: `mapping/mcp-guard.json`. Scanner version(s) checked: 2.0.0. Adapter version: 1.0.0. Provenance: **captured-from-real-output**. Matched on: `findings[].rule_id`. 23 entries: 9 mapped, 14 unmapped.
 
-| Raw label (verbatim) | Stage scope | Class | Rationale | Confidence | Status |
-| --- | --- | --- | --- | --- | --- |
-| *(no labels captured)* | | | | | |
+Three of the labels below were captured verbatim from a whole-corpus scan, committed at `tests/fixtures/mcp-guard-corpus-scan.json`. The remainder are labels the scanner can emit that did not fire on this corpus; those entries are mostly `provisional`.
 
-`requires signup` applies if a token is needed to run at all; that is a
-scoreboard column, not a mapping concern.
+| Raw label (verbatim) | Stage scope | Class | Rationale ID | Confidence | Status | Rationale (first sentence) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `MCPG-SECRET-HARDCODED` | any | A7 | MR-mcp-guard-001 | high | accepted | The clean case: the rule and the class name the same property, a credential-shaped literal in source. |
+| `MCPG-PY-PATH-TAINT` | any | A8 | MR-mcp-guard-002 | high | accepted | High confidence on the class, and the interesting fact about this rule is not the mapping but what it is blind to. |
+| `MCPG-JS-PATH-TAINT` | any | A8 | MR-mcp-guard-003 | medium | provisional | The JavaScript twin of MR-mcp-guard-002, and weaker in one respect that we state rather than smooth over: where the Python rule performs intraprocedural taint from a handler parameter, this one fires on any non-literal path expression, which is a broader and less caller-anchored trigger. |
+| `MCPG-PY-SHELL-TAINT` | any | A10 | MR-mcp-guard-004 | high | accepted | The strongest entry in the table: the rule fired on a10a-command-execution and a10b-allowlist-bypass, on the exact subprocess.run(shell=True) lines the manifests declare, and on nothing else. |
+| `MCPG-JS-SHELL-TAINT` | any | A10 | MR-mcp-guard-005 | medium | provisional | The JavaScript twin of MR-mcp-guard-004 and subject to the same caveat as MR-mcp-guard-003: 'non-literal' is a looser trigger than 'request-derived'. |
+| `MCPG-JS-VM-EVAL` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-006 | medium | provisional | A real and serious finding that our ten classes do not define. |
+| `MCPG-MCP-PROMPT-INJECTION-SURFACE` | any | A1 | MR-mcp-guard-007 | high | provisional | No stage split is needed here, which is worth saying because the coarse 'prompt injection' label that forces one (worked through in mapping/example-scanner.json) is the common shape in this category and this is not it. |
+| `MCPG-MCP-URI-CONCAT` | any | A8 | MR-mcp-guard-008 | medium | provisional | The weakest mapped entry here and marked accordingly. |
+| `MCPG-MCP-SCHEMA-UNDECLARED-ARGS` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-009 | high | provisional | A descriptor-versus-implementation mismatch: the tool accepts more than it advertises. |
+| `MCPG-DEP-KNOWN-VULN` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-010 | high | provisional | taxonomy.md's scope boundary excludes 'generic application security findings with no MCP-specific surface', and a dependency sitting inside a published affected range is the textbook instance: the same finding would be reported about any Python project. |
+| `MCPG-DOCKER-ROOT` | any | unmapped: not-mcp-specific | MR-mcp-guard-011 | high | provisional | A container hardening finding about the image a server might ship in, not about the server's MCP surface. |
+| `MCPG-DOCKER-LATEST-TAG` | any | unmapped: not-mcp-specific | MR-mcp-guard-012 | high | provisional | A build reproducibility finding. |
+| `MCPG-DOCKER-CHMOD777` | any | unmapped: not-mcp-specific | MR-mcp-guard-013 | high | provisional | A filesystem permissions finding inside a build layer. |
+| `MCPG-DOCKER-ADD-REMOTE` | any | unmapped: not-mcp-specific | MR-mcp-guard-014 | high | provisional | Supply-chain integrity at build time: an unverified fetch into the image. |
+| `MCPG-DOCKER-CURL-PIPE-SH` | any | unmapped: not-mcp-specific | MR-mcp-guard-015 | high | provisional | Recorded with its considered class because 'a shell runs a fetched script' is the single most tempting mis-map in the DOCKER family, and a reviewer should be able to see it was considered and why it lost rather than trust that it was. |
+| `MCPG-DOCKER-ENV-SECRET` | any | unmapped: insufficient-specificity | MR-mcp-guard-016 | medium | provisional | The most arguable unmapped entry here, and we expect to be argued with, which is why the near-miss is written out rather than summarised as 'Docker, out of scope'. |
+| `MCPG-DYN-CMDEXEC` | any | A10 | MR-mcp-guard-017 | high | provisional | Mapped although it cannot currently fire. |
+| `MCPG-DYN-PATHTRAVERSAL` | any | A8 | MR-mcp-guard-018 | high | provisional | The runtime counterpart of MR-mcp-guard-002, and strictly better evidence: it proves containment failed rather than inferring it from the absence of a check, which is the distinction c01-notes-workspace was built to expose. |
+| `MCPG-DYN-CRASH` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-019 | high | provisional | An availability finding. |
+| `MCPG-DYN-JSONRPC-VIOLATION` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-020 | high | provisional | Protocol conformance, not a security class. |
+| `MCPG-DYN-NO-DISPATCH` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-021 | high | provisional | Protocol conformance again, and additionally a self-declared meta-finding: the rule's own rationale says its purpose is to tell the operator that every other dynamic probe on this target is uninterpretable. |
+| `MCPG-DYN-SCHEMA-UNENFORCED` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-022 | high | provisional | The runtime sibling of MR-mcp-guard-009 and unmapped for the same reason: our taxonomy has no class for a descriptor that does not bind its implementation. |
+| `MCPG-DYN-UNDECLARED-METHOD` | any | unmapped: outside-taxonomy-scope | MR-mcp-guard-023 | high | provisional | An undeclared reachable method is a hidden capability, and if our taxonomy had a class for 'the server does more than it advertises' this would be its clearest instance. |
 
-### sentinel-scan-cli (community) — *unverified candidate*
+### Ramparts
 
-Mapping file: not created. Labels captured: none. Adapter: not started.
+Mapping file: `mapping/ramparts.json`. Scanner version(s) checked: 0.8.8. Adapter version: 1.0.0. Provenance: **captured-from-real-output**. Matched on: `yara_results[].rule_name`. 40 entries: 16 mapped, 24 unmapped.
 
-| Raw label (verbatim) | Stage scope | Class | Rationale | Confidence | Status |
-| --- | --- | --- | --- | --- | --- |
-| *(no labels captured)* | | | | | |
+The labels are the 40 YARA rule names shipped in `rules/pre/*.yar` at the pinned source tag and baked into the adapter image, so the table covers every label the scanner can emit; `tests/test_adapter_ramparts.py` fails if the two drift apart.
 
-### mcp-guard (community) — *unverified candidate*
+| Raw label (verbatim) | Stage scope | Class | Rationale ID | Confidence | Status | Rationale (first sentence) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `PromptInjectionSignature` | any | A1 | MR-ramparts-001 | high | accepted | Clean R1 match. The rule's condition (read from ramparts 0.8.8's rules/pre/skill_prompt_injection.yar) fires on instruction-override, role-redefinition and concealment phrasing -- precisely A1's four disjuncts -- and, because this adapter only ever gives ramparts a live URL, the matched text is necessarily a descriptor field returned by the MCP handshake. |
+| `IndirectPromptInjection` | any | A1 | MR-ramparts-002 | medium | accepted | This is the pair the build brief specifically asked to check rather than accept by name alone, and checking it changes the answer. |
+| `CoerciveInjection` | any | A1 | MR-ramparts-003 | high | accepted | Settled by A3's own disclaimer: a claim of priority over unnamed 'other tools' in general is A1; only a claim that names and makes an assertion about a SPECIFIC other tool or server is A3. |
+| `CapabilityInflation` | any | A1 | MR-ramparts-004 | medium | accepted | Most of this rule's signal (keyword stuffing, deceptive certification claims like 'certified by Anthropic', hidden activation triggers) is about discovery-ranking manipulation rather than direct behavioural override, which is a slightly broader read of A1 than PromptInjectionSignature's classic case. |
+| `AutonomyAbuse` | any | A1 | MR-ramparts-005 | medium | accepted | The closest call in this table to a taxonomy gap. |
+| `CovertExfiltration` | any | A1 | MR-ramparts-006 | medium | accepted | Named 'exfiltration' and tagged category 'exfiltration' in the rule's own metadata, so a name-based mapping to A5 is the obvious first guess -- and it is the wrong one once the present-when tests are actually checked, which is exactly what the build brief asked us to verify for this label. |
+| `SkillSystemManipulation` | any | A1 | MR-ramparts-007 | medium | accepted | The content here (rm -rf, wipefs, chown of root paths) is more dramatic than the classic prompt-injection phrasing PromptInjectionSignature targets, which might tempt a reader to look for a more specific class. |
+| `SkillToolChainingExfiltration` | any | A1 | MR-ramparts-008 | medium | accepted | Consistent with CovertExfiltration (MR-ramparts-006): the name and category tags say 'exfiltration', but the mechanism is textual instruction-matching over descriptor content, never an observed runtime egress attempt, so A5's behavioural test cannot be satisfied by what this rule reports in any configuration this adapter runs. |
+| `UnicodeSteganography` | any | A1 | MR-ramparts-009 | high | accepted | This rule does not detect a new property; it detects an obfuscation technique applied to the same instruction-bearing content PromptInjectionSignature targets in the clear. |
+| `SecretsLeakage` | any | A7 | MR-ramparts-010 | medium | accepted | Definitionally a clean A7 match: every sub-pattern requires an actual credential-shaped literal value, not a reference or a channel. |
+| `SkillCredentialHarvesting` | any | A7 | MR-ramparts-011 | low | accepted | A genuine two-headed rule: one condition arm is a literal-credential-format test (A7-shaped, like SecretsLeakage), the other is theft-instruction language (A1-shaped, like CovertExfiltration). |
+| `SSHKeyExposure` | any | A7 | MR-ramparts-012 | low | accepted | Like SkillCredentialHarvesting, this rule bundles a clean literal-credential test (PEM/SSH private key headers, public key blobs) with a much weaker filename/path-mention test (the string 'id_rsa' or '.ssh/' appearing anywhere). |
+| `PEMFileAccess` | any | A7 | MR-ramparts-013 | low | accepted | Same reasoning and same caveat as SSHKeyExposure (MR-ramparts-012): a clean literal-key-material sub-pattern bundled with much weaker filename/keyword mentions under one label. |
+| `EnvironmentVariableLeakage` | any | A9 | MR-ramparts-014 | medium | accepted | This is our version of the worked A7/A9 dispute in mapping/example-scanner.json (MR-example-scanner-007): the rule's condition genuinely has both an A7-shaped arm (literal value assigned to a credential-shaped name) and an A9-shaped arm (environment-access syntax plus theft language). |
+| `CommandInjection` | any | A10 | MR-ramparts-015 | medium | accepted | Clean definitional match to A10 -- the rule exists specifically to catch shell/command-injection shapes, which is what A10 defines. |
+| `PathTraversalVulnerability` | any | A8 | MR-ramparts-016 | medium | accepted | Definitionally the cleanest of the code-pattern rules -- A8's own worked example in mapping/example-scanner.json (MR-example-scanner-001) is this exact class of finding. |
+| `SQLInjection` | any | unmapped: outside-taxonomy-scope | MR-ramparts-017 | high | accepted | Vendor description: 'Comprehensive SQL injection detection covering multiple attack vectors and evasion techniques'; this is the taxonomy's own literal example of an out-of-scope generic app-sec finding. |
+| `CrossOriginEscalation` | any | unmapped: outside-taxonomy-scope | MR-ramparts-018 | high | accepted | Vendor description: 'multiple domains/origins in MCP tool configurations that could lead to cross-origin escalation attacks' -- detects several different URLs/domains appearing together in tool config text. |
+| `MCPConfigRisk` | any | unmapped: outside-taxonomy-scope | MR-ramparts-019 | high | accepted | Vendor description: 'STDIO server uses risky shell/interpreter with inline code or pipe to shell' -- a property of how an MCP CLIENT would LAUNCH a stdio server, not of a tool the server exposes. |
+| `NetworkReconnaissance` | any | unmapped: outside-taxonomy-scope | MR-ramparts-020 | high | accepted | Vendor description (hacktools.yar): 'Network reconnaissance and scanning patterns', category 'hack-tool' -- a generic offensive-tooling signature (nmap/masscan-style command references), not an MCP-specific class. |
+| `BackdoorPersistence` | any | unmapped: outside-taxonomy-scope | MR-ramparts-021 | high | accepted | Vendor description (malware.yar): 'Backdoor persistence with malicious payloads (shell commands, SSH key injection, hidden root users)', category 'malware'. |
+| `ASPXWebshell` | any | unmapped: outside-taxonomy-scope | MR-ramparts-022 | high | accepted | Malware/webshell/offensive-tooling signature (ASP.NET webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `C2FrameworkIndicators` | any | unmapped: outside-taxonomy-scope | MR-ramparts-023 | high | accepted | Malware/webshell/offensive-tooling signature (command-and-control framework signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `CryptoCoinjacking` | any | unmapped: outside-taxonomy-scope | MR-ramparts-024 | high | accepted | Malware/webshell/offensive-tooling signature (browser/server cryptojacking signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `CryptoMinerSoftware` | any | unmapped: outside-taxonomy-scope | MR-ramparts-025 | high | accepted | Malware/webshell/offensive-tooling signature (cryptomining software signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `CryptoMiningPools` | any | unmapped: outside-taxonomy-scope | MR-ramparts-026 | high | accepted | Malware/webshell/offensive-tooling signature (cryptomining pool connection signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `CryptoStratumProtocol` | any | unmapped: outside-taxonomy-scope | MR-ramparts-027 | high | accepted | Malware/webshell/offensive-tooling signature (Stratum mining-protocol signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `ExploitFramework` | any | unmapped: outside-taxonomy-scope | MR-ramparts-028 | high | accepted | Malware/webshell/offensive-tooling signature (exploit-framework (e.g. |
+| `InfoStealer` | any | unmapped: outside-taxonomy-scope | MR-ramparts-029 | high | accepted | Malware/webshell/offensive-tooling signature (credential/info-stealer malware signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `JSPWebshell` | any | unmapped: outside-taxonomy-scope | MR-ramparts-030 | high | accepted | Malware/webshell/offensive-tooling signature (JSP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `KeyloggerIndicators` | any | unmapped: outside-taxonomy-scope | MR-ramparts-031 | high | accepted | Malware/webshell/offensive-tooling signature (keylogger signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `OffensiveToolReferences` | any | unmapped: outside-taxonomy-scope | MR-ramparts-032 | high | accepted | Malware/webshell/offensive-tooling signature (offensive-security tooling reference signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `PHPWebshellGeneric` | any | unmapped: outside-taxonomy-scope | MR-ramparts-033 | high | accepted | Malware/webshell/offensive-tooling signature (generic PHP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `PHPWebshellKnown` | any | unmapped: outside-taxonomy-scope | MR-ramparts-034 | high | accepted | Malware/webshell/offensive-tooling signature (known-family PHP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `PHPWebshellObfuscated` | any | unmapped: outside-taxonomy-scope | MR-ramparts-035 | high | accepted | Malware/webshell/offensive-tooling signature (obfuscated PHP webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `PhishingKit` | any | unmapped: outside-taxonomy-scope | MR-ramparts-036 | high | accepted | Malware/webshell/offensive-tooling signature (phishing-kit signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `PrivilegeEscalationTools` | any | unmapped: outside-taxonomy-scope | MR-ramparts-037 | high | accepted | Malware/webshell/offensive-tooling signature (local privilege-escalation tooling signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `PythonWebshell` | any | unmapped: outside-taxonomy-scope | MR-ramparts-038 | high | accepted | Malware/webshell/offensive-tooling signature (Python webshell signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `RansomwareBehavior` | any | unmapped: outside-taxonomy-scope | MR-ramparts-039 | high | accepted | Malware/webshell/offensive-tooling signature (ransomware behaviour signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
+| `ReverseShell` | any | unmapped: outside-taxonomy-scope | MR-ramparts-040 | high | accepted | Malware/webshell/offensive-tooling signature (reverse-shell payload signature), explicitly named in the build brief as out of scope: 'Malware/webshell families are out of our scope; leave them unmapped with a reason.' These rules exist to catch a server that has already been compromised or was malicious from the start -- a wholesale-server-integrity check -- not one of the ten specific attack classes this benchmark measures, none of which are about detecting a generically compromised host. |
 
-Mapping file: not created. Labels captured: none. Adapter: not started.
+### sentinel-scan-cli (community)
 
-| Raw label (verbatim) | Stage scope | Class | Rationale | Confidence | Status |
-| --- | --- | --- | --- | --- | --- |
-| *(no labels captured)* | | | | | |
+Mapping file: `mapping/sentinel-scan-cli.json`. Scanner version(s) checked: 1.4.16. Adapter version: 1.0.0. Provenance: **captured-from-real-output**. Matched on: `results[].heuristic`. 15 entries: 6 mapped, 9 unmapped.
+
+A subset of the labels was captured verbatim from output this project produced (see the file's `provenance_note`); the rest are labels the scanner can emit that did not fire here and are mostly `provisional`.
+
+| Raw label (verbatim) | Stage scope | Class | Rationale ID | Confidence | Status | Rationale (first sentence) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `tool_definition_drift` | any | A2 | MR-sentinel-scan-cli-001 | high | accepted | The strongest objection is that the rule does not judge the diff, and taxonomy.md excludes a cosmetic diff from A2 by name -- so a vendor could argue this label over-claims and a critic could argue it should therefore be unmapped. |
+| `tool_name_shadowing` | any | A3 | MR-sentinel-scan-cli-002 | medium | provisional | This and MR-sentinel-scan-cli-001 are the two entries worth the most care, and this one is the weaker of the pair, so the weakness is stated rather than smoothed over. |
+| `tool_description_injection` | any | A1 | MR-sentinel-scan-cli-003 | high | accepted | The clean case: the label and the class name the same property, and the vendor's own phrase list reads like a paraphrase of A1's present-when test. |
+| `hidden_unicode_instructions` | any | A1 | MR-sentinel-scan-cli-004 | medium | provisional | The objection to answer is that the rule detects a smuggling CHANNEL rather than an instruction: a zero-width space left behind by a copy-paste would fire, and a stray zero-width space is not a payload addressed to anyone. |
+| `hardcoded_credential` | any | A7 | MR-sentinel-scan-cli-005 | high | provisional | A clean mapping with an important caveat about reach rather than about class. |
+| `command_injection_risk` | any | A10 | MR-sentinel-scan-cli-006 | medium | provisional | The honest objection is that this rule reads a self-report: it fires only when the descriptor text itself contains something like 'subprocess.run(' together with the word 'unsanitized', which means it catches a manifest that confesses rather than a server that offends. |
+| `excessive_agency_schema` | any | unmapped: no-defensible-single-class | MR-sentinel-scan-cli-007 | high | accepted | This is R4 in its clearest form, and it is the most expensive decision in this file, so the cost is stated first: this is the label that fired on a10b-allowlist-bypass's run_build, and leaving it unmapped means sentinel-scan-cli gets no credit for a10b's A10 item even though the finding's evidence text reads 'parameter "command" is a free-form string with no enum/pattern - looks like arbitrary command/code execution'. |
+| `missing_hitl_confirmation` | any | unmapped: outside-taxonomy-scope | MR-sentinel-scan-cli-008 | high | accepted | Our taxonomy has no class for 'a sensitive capability is exposed without a declared approval gate', and it should not be pushed into one. |
+| `indirect_injection_surface` | any | unmapped: outside-taxonomy-scope | MR-sentinel-scan-cli-009 | high | accepted | The concept this label names -- a toxic agent flow, where the capability to ingest untrusted content sits next to the capability to act on it -- is a real and well-documented MCP risk that our ten classes do not cover. |
+| `cross_origin_exfiltration` | any | unmapped: insufficient-specificity | MR-sentinel-scan-cli-010 | medium | provisional | This label reports something real and close to A5 -- argument content flowing to a third-party host -- and is still left unmapped, because the single distinction A5 turns on is the one this rule structurally cannot make. |
+| `overbroad_tool_scope` | any | unmapped: outside-taxonomy-scope | MR-sentinel-scan-cli-011 | high | provisional | An authorization-hygiene check about a declared permission string. |
+| `unpinned_remote_source` | any | unmapped: outside-taxonomy-scope | MR-sentinel-scan-cli-012 | high | accepted | Both branches are outside the taxonomy, and for different reasons that are each written down in taxonomy.md. |
+| `missing_provenance` | any | unmapped: outside-taxonomy-scope | MR-sentinel-scan-cli-013 | high | accepted | A supply-chain governance check: it reports the absence of publisher or integrity metadata for a remotely-sourced server. |
+| `dos_resource_exhaustion` | any | unmapped: outside-taxonomy-scope | MR-sentinel-scan-cli-014 | high | provisional | Unbounded consumption is not one of our ten classes. |
+| `homoglyph_typosquat` | any | unmapped: insufficient-specificity | MR-sentinel-scan-cli-015 | medium | provisional | The line this entry draws is between shadowing that names its target and impersonation that does not, and it is the same line the vendor draws by giving the two cases different ids. |
+
+### agent-scan / Invariant mcp-scan (Snyk)
+
+Mapping file: `mapping/snyk-agent-scan.json`. Scanner version(s) checked: 0.6.3. Adapter version: 1.0.0. Provenance: **unverified**. Matched on: `findings[].risk_indicator`. 8 entries: 2 mapped, 6 unmapped.
+
+**Unverified.** This project has never seen this tool's real `--json` output, so neither the label field nor the label strings are confirmed. The adapter does not run without a `SNYK_TOKEN`, and this row is published as unavailable. These entries will be re-checked against real output before the row can carry a result.
+
+| Raw label (verbatim) | Stage scope | Class | Rationale ID | Confidence | Status | Rationale (first sentence) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `secret detection` | runtime | A7 | MR-snyk-agent-scan-001 | medium | provisional | The clearest of the eight, and still only a name-level match. |
+| `prompt injection` | runtime | A1 | MR-snyk-agent-scan-002 | low | provisional | Mapped, but weaker than the secret-detection entry above, and marked so. |
+| `dangerous words` | runtime | unmapped: insufficient-specificity | MR-snyk-agent-scan-003 | low | provisional | A two-word label with no documented trigger condition. |
+| `untrusted content` | runtime | unmapped: insufficient-specificity | MR-snyk-agent-scan-004 | low | provisional | Provenance and instruction-bearing-content are different properties, and this label names the first while every one of our classes tests for something closer to the second. |
+| `private data` | runtime | unmapped: insufficient-specificity | MR-snyk-agent-scan-005 | low | provisional | Too general a name to anchor to any one present-when test. |
+| `destructive capabilities` | runtime | unmapped: insufficient-specificity | MR-snyk-agent-scan-006 | medium | provisional | The tempting mis-map in this table, so it is recorded with its considered class rather than dismissed in one line. |
+| `suspicious downloads` | runtime | unmapped: not-mcp-specific | MR-snyk-agent-scan-007 | medium | provisional | Reads as a general supply-chain / malware-delivery signal (an unexpected outbound fetch, a known-bad URL), which is the kind of generic finding docs/taxonomy.md's scope boundary excludes when it has no MCP-specific surface, and no class here tests for a download in isolation from an execution or exfiltration step it has not been shown to connect to. |
+| `malicious code` | runtime | unmapped: insufficient-specificity | MR-snyk-agent-scan-008 | low | provisional | The vaguest of the eight: a general malware/code-signature concept with no stated mechanism (static signature match on source? |
 
 ### Disputed entries across all scanners
 
 | Scanner | Rationale | Our class | Vendor's class | Outcome | Scoreboard note |
 | --- | --- | --- | --- | --- | --- |
-| *(none — no results published yet)* | | | | | |
+| *(none open; the disclosure round has not closed)* | | | | | |
 
 ---
+
 
 ## 11. Class boundaries we expect to be contested
 

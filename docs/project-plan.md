@@ -262,7 +262,8 @@ which is exactly why it goes through both before anyone quotes it.
 **Phase 3 — Disclosure**
 
 - [x] Draft disclosure email template
-- [ ] Identify maintainer contacts for each scanner
+- [x] Identify maintainer contacts for each scanner (see disclosure.md; three need a GitHub issue)
+- [x] Per-scanner disclosure pack (`make disclosure-pack`)
 - [ ] Send results with 14-day window
 - [ ] Log responses
 - [ ] Fold in corrections
@@ -270,10 +271,11 @@ which is exactly why it goes through both before anyone quotes it.
 **Phase 4 — Launch**
 
 - [ ] README with scoreboard at top
-- [ ] GitHub Pages site + Actions regeneration
-- [ ] "Add your scanner" contribution guide
-- [ ] Embeddable badge
-- [ ] Launch writeup (methodology-first)
+- [x] GitHub Pages site + Actions regeneration (built; deploy gated on `PUBLISH_SCOREBOARD` until disclosure closes)
+- [x] "Add your scanner" contribution guide ([adding-a-scanner.md](adding-a-scanner.md))
+- [x] Embeddable badge (no score; `tools/badges.py`)
+- [ ] Launch writeup (methodology-first) -- drafted in [launch-writeup.md](launch-writeup.md), results are placeholders
+- [ ] Resolve the three pre-launch open questions -- proposals 0001-0003 in [amendments/](amendments/README.md), awaiting the 14-day comment period
 - [ ] Post: Show HN
 - [ ] Post: r/netsec
 - [ ] Post: MCP/agent-security communities
@@ -281,8 +283,8 @@ which is exactly why it goes through both before anyone quotes it.
 
 **Phase 5 — Ongoing**
 
-- [ ] Monthly re-run scheduled in Actions
-- [ ] Private held-back test set created
+- [x] Monthly re-run scheduled in Actions (`scoreboard.yml`)
+- [ ] Private held-back test set created -- design proposed in amendment 0004
 - [ ] Quarterly corpus review scheduled
 
 ## Risks and mitigations

@@ -1,0 +1,38 @@
+# Checks that need no Docker lab: manifests, the credential guard, and the unit
+# tests. The lab-dependent checks (smoke_server, verify_lab) run in
+# scoreboard.yml, where the lab is actually brought up.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.txt
+
+      # Ground truth first: a bad manifest silently corrupts every number
+      # downstream.
+      - name: Validate corpus manifests
+        run: python tools/validate_manifests.py
+
+      - name: Check no real credentials are committed
+        run: python tools/check_no_real_credentials.py
+
+      - name: Unit tests
+        run: python -m pytest tests/ -q

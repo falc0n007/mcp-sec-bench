@@ -1,8 +1,8 @@
 # Contributing
 
-The full "add your scanner" guide is a Phase 4 deliverable. Until then, the
-rules that already bind contributions are the ones below, because they were
-fixed in Phase 0 and are not negotiated case by case.
+The rules that bind contributions were fixed in Phase 0 and are not negotiated
+case by case. To add a scanner, start with
+[docs/adding-a-scanner.md](docs/adding-a-scanner.md).
 
 ## Read first
 
@@ -35,9 +35,25 @@ without making it more detectable will be rejected.
 ## Adapters
 
 Anyone may submit an adapter, including a vendor for their own tool. Vendor
-authorship is disclosed on the scoreboard row. Adapters run the scanner in its
-**documented default configuration**; alternative configurations are published
-as additional labelled rows, never as replacements.
+authorship is disclosed on the scoreboard row. A submission is four things: an
+adapter implementing the contract in `runner/adapters/__init__.py`, a Dockerfile
+pinned to an exact version or commit in `runner/adapters/dockerfiles/`, a
+mapping file in `mapping/` in which every label (including the ones left
+unmapped) carries a written rationale, and tests modelled on
+`tests/test_adapter_*.py`.
+
+- Adapters never map findings to our taxonomy, never drop output they do not
+  understand, and never write to the corpus.
+- Adapters run the scanner in its **documented default configuration**.
+  Alternative configurations are published as additional labelled rows, never
+  as replacements.
+- A scanner that needs an account is benchmarked, and the requirement is
+  published as a column.
+- Before any result is published, the scanner's maintainers see it and have 14
+  days to respond.
+
+The step-by-step guide, with the exact files and commands, is
+[docs/adding-a-scanner.md](docs/adding-a-scanner.md).
 
 ## Disputing a published result
 
