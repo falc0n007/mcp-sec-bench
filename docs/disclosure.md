@@ -32,7 +32,6 @@ checked and, if wrong, corrected.
 | mcp-guard | yes — maintainer email listed in the policy, route 1 | [SECURITY.md](https://github.com/SaravanaGuhan/mcp-guard/blob/main/SECURITY.md) | no | — | — | — |
 | Ramparts | no published contact — route 3 | [issues](https://github.com/highflame-ai/ramparts/issues) | no | — | — | — |
 | sentinel-scan-cli | no published contact — route 3 | [issues](https://github.com/Ventrova/sentinel-scan-cli/issues) | no | — | — | — |
-| Snyk agent-scan | route 3 (see below) | [issues](https://github.com/snyk/agent-scan/issues) | n/a | — | — | — |
 
 Contacts verified 2026-09-30. GitHub private vulnerability reporting was
 disabled on all five repositories at that date.
@@ -59,9 +58,8 @@ agent-scan is now 0.6.8; 0.6.4 removed the `dangerous_words` risk and 0.6.5
 gated remote MCP connections, so the adapter must be re-verified against a
 newer version before any credentialed Snyk row is produced.
 
-Snyk is published as unavailable because a token gates all of its analysis, so
-there is no result to disclose. It is still contacted, because "we could not
-run your tool" is a claim about their tool and they should be able to correct it.
+Snyk agent-scan is not on the board: a token gates all of its analysis and none
+was supplied, so there is no result to disclose and no row to contest.
 
 ## Finding a contact
 
@@ -179,9 +177,9 @@ reason to distrust everything else:
 - **A1 versus A4 is knowingly mis-scored in one case.** See the open question in
   [decisions.md](decisions.md).
 - **The near-miss counter is inflatable** and is not evidence of near-competence.
-- **Credential-free configurations only.** Cisco's source-code analyzer and
-  Snyk's entire analysis require keys we did not supply, which bounds what those
-  rows can show. Stated on the scoreboard, and worth repeating in the email.
+- **Credential-free configurations only.** Cisco's source-code analyzer requires
+  a key we did not supply, which bounds what its row can show. Stated on the
+  scoreboard, and worth repeating in the email.
 - **Where a scanner scored zero, say which kind of zero it was.** For Ramparts
   the cause is its scan surface: 0.8.8 never reads source or tool return
   values. For Cisco it is a rule-coverage gap on text the scanner demonstrably

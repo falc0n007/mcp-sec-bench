@@ -53,7 +53,6 @@ ADAPTER_FILES = {
     "mcp-guard": "mcp_guard.py",
     "ramparts": "ramparts.py",
     "sentinel-scan-cli": "sentinel_scan.py",
-    "snyk-agent-scan": "snyk_agent_scan.py",
 }
 # Every adapter shells out through this, so it is part of "how it was invoked".
 SHARED_ADAPTER_FILES = ("container.py",)
@@ -79,7 +78,7 @@ WEAKNESSES: list[tuple[str, frozenset[str] | None]] = [
     (
         "Credential-free configuration only. This scanner has analysis that "
         "requires keys we did not supply, which bounds what its row can show.",
-        frozenset({"cisco-mcp-scanner", "snyk-agent-scan"}),
+        frozenset({"cisco-mcp-scanner"}),
     ),
     (
         "A zero for this scanner is a scan-surface limit, not a rule gap: "
