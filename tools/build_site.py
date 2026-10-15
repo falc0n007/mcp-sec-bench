@@ -304,6 +304,8 @@ STYLE = """
   --paper: #f7f8f6; --raised: #eef0ed; --ink: #1b2128; --muted: #5d6670;
   --rule: #d6dad8; --signal: #2f5bd3; --hatch: #b9c0c6;
   --caution: #8a5a00; --caution-rule: #d9a33a;
+  --miss: #e4e7e5; --miss-edge: #cfd4d1; --on-signal: #fff; --signal-soft: #a9bdf0;
+  --gap: #b3261e; --gap-bg: #fbeceb;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -311,6 +313,8 @@ STYLE = """
     --paper: #12161b; --raised: #1a2027; --ink: #e4e8ec; --muted: #97a1ab;
     --rule: #2b323a; --signal: #86a8ff; --hatch: #46505a;
     --caution: #e7c27a; --caution-rule: #a5782a;
+    --miss: #232a32; --miss-edge: #323a44; --on-signal: #0d1117; --signal-soft: #4d6bb8;
+    --gap: #ff8a80; --gap-bg: #2a1a19;
     color-scheme: dark;
   }
 }
@@ -353,18 +357,24 @@ table.matrix { border-collapse: separate; border-spacing: 0; min-width: 100%; }
 .sub { display: block; color: var(--muted); font-size: .8rem; font-weight: normal; }
 .cell { text-align: center; vertical-align: middle; padding: .7rem 0; }
 .mark {
-  display: block; width: 1.75rem; height: 1.75rem; margin: 0 auto .3rem; border-radius: 3px;
-  border: 1.5px solid var(--muted);
-  background: linear-gradient(to top, var(--signal) calc(var(--r, 0) * 100%), transparent 0);
+  display: flex; align-items: center; justify-content: center;
+  width: 3.1rem; height: 2.3rem; margin: 0 auto; border-radius: 6px;
+  border: 1px solid var(--rule); background: var(--raised);
+  font-size: .8rem; font-weight: 600; color: var(--muted);
 }
-.cell[data-state="hit"] .mark, .cell[data-state="partial"] .mark { border-color: var(--signal); }
+.cell[data-state="miss"] .mark { background: var(--miss); border-color: var(--miss-edge); }
+.cell[data-state="hit"] .mark { background: var(--signal); border-color: var(--signal); color: var(--on-signal); }
+.cell[data-state="partial"] .mark {
+  border-color: var(--signal); color: var(--ink);
+  background: linear-gradient(to top, var(--signal-soft) calc(var(--r, 0) * 100%), var(--raised) 0);
+}
 .cell[data-state="na"] .mark {
-  border: 1.5px dashed var(--hatch);
-  background: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 5px);
+  border: 1px dashed var(--hatch); background: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 6px);
+  font-weight: 500;
 }
-.cell[data-state="nodata"] .mark { border: 1.5px dotted var(--hatch); }
-.v { display: block; font-size: .75rem; color: var(--muted); white-space: nowrap; }
-.cell[data-state="hit"] .v, .cell[data-state="partial"] .v { color: var(--ink); font-weight: 600; }
+.cell[data-state="nodata"] .mark { border: 1px dotted var(--hatch); background: transparent; }
+.cell { padding: .35rem .2rem; }
+.v { display: none; }
 .unavail { text-align: left; color: var(--muted); font-size: .9rem; padding: .7rem 0 .7rem 0; vertical-align: middle; }
 .unavail strong { color: var(--ink); font-weight: 600; }
 
@@ -377,6 +387,23 @@ table.matrix { border-collapse: separate; border-spacing: 0; min-width: 100%; }
 .key p { margin: 0 0 .4rem; color: var(--muted); font-size: .8rem; }
 .key dl { display: grid; grid-template-columns: 2.4rem 1fr; gap: .15rem .25rem; margin: 0; }
 .key dt { font-weight: 600; } .key dd { margin: 0; }
+
+
+/* Coverage strip: the headline finding, before the detail. */
+.gapline { font-size: 1.15rem; max-width: 46rem; margin: .4rem 0 .3rem; }
+.gapline strong { font-weight: 650; }
+.covgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; margin: 1.25rem 0 0; padding: 0; list-style: none; }
+.cov { display: flex; flex-direction: column; gap: .35rem; padding: .8rem .85rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--raised); }
+.cov.nobody { border-color: var(--gap); background: var(--gap-bg); }
+.cov .code { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+.cov.nobody .code { color: var(--gap); }
+.cov .segs { display: flex; gap: 3px; height: .7rem; align-items: center; }
+.cov .seg { flex: 1; height: .7rem; border-radius: 3px; background: var(--miss); border: 1px solid var(--miss-edge); }
+.cov .seg.on { background: var(--signal); border-color: var(--signal); }
+.cov .none { font-size: .72rem; color: var(--muted); }
+.cov .verdict { font-size: .8rem; font-weight: 600; }
+.cov.nobody .verdict { color: var(--gap); }
+.cov .cname { font-size: .75rem; color: var(--muted); line-height: 1.3; }
 
 /* Plain data tables. */
 table.data { border-collapse: collapse; width: 100%; font-size: .9rem; }
@@ -402,6 +429,7 @@ footer h2 { margin: 0 0 .5rem; font-size: 1rem; color: var(--ink); }
 ul.links { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; padding: 0; margin: 0 0 1rem; list-style: none; }
 .ext { width: .7em; height: .7em; vertical-align: -.02em; margin-left: .2em; fill: none; stroke: currentColor; stroke-width: 1.6; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 52rem) { .covgrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 40rem) {
   .wrap { padding-top: 2rem; }
   .matrix tbody th { min-width: 9rem; padding-right: .75rem; }
@@ -487,6 +515,13 @@ def _name_block(scanner: dict[str, Any], link_prefix: str = "", tags: bool = Tru
     return out
 
 
+def _tile_text(label: str, state: str) -> str:
+    """Short figure for inside a tile: "1", "0", "n/a", never a range."""
+    if state in ("na", "nodata"):
+        return label
+    return label.split(" ")[0].replace("1.00", "1").replace("0.00", "0")
+
+
 def _mark_cell(scanner: dict[str, Any], cls: str, gap: bool) -> str:
     state, fill, label = class_state(scanner, cls)
     words = {
@@ -497,9 +532,57 @@ def _mark_cell(scanner: dict[str, Any], cls: str, gap: bool) -> str:
     gap_cls = " gap-before" if gap else ""
     return (
         f'<td class="cell{gap_cls}" data-state="{state}" style="--r:{fill:.3f}" '
-        f'title="{_esc(title)}"><span class="mark" aria-hidden="true"></span>'
-        f'<span class="v">{_esc(label)}</span>'
+        f'title="{_esc(title)}"><span class="mark" aria-hidden="true">{_esc(_tile_text(label, state))}</span>'
         f'<span class="sr"> {_esc(words)}</span></td>'
+    )
+
+
+def _coverage(scanners: list[dict[str, Any]]) -> str:
+    """Class-centric view: for each class, how many of the scanners that
+    attempted it found it. Per class, never combined across classes, and the
+    scanners are not ranked -- segments carry no names and no order meaning."""
+    cols = []
+    gaps = []
+    for c in CLASSES:
+        attempted = found = 0
+        for sc in scanners:
+            if unavailable_reason(sc) is not None:
+                continue
+            state, _, _ = class_state(sc, c)
+            if state in ("na", "nodata"):
+                continue
+            attempted += 1
+            if state in ("hit", "partial"):
+                found += 1
+        if attempted and found == 0:
+            gaps.append(c)
+        segs = "".join(
+            f'<i class="seg{" on" if i < found else ""}"></i>' for i in range(attempted)
+        ) or '<span class="none">not attempted</span>'
+        verdict = (
+            "found by none" if attempted and not found
+            else f"found by {found} of {attempted}" if attempted else "no scanner attempted"
+        )
+        cols.append(
+            f'<li class="cov{" nobody" if attempted and not found else ""}">'
+            f'<span class="code">{c}</span><span class="segs">{segs}</span>'
+            f'<span class="verdict">{_esc(verdict)}</span>'
+            f'<span class="cname">{_esc(CLASS_NAMES[c])}</span></li>'
+        )
+    if gaps:
+        lead = (
+            f"<strong>{len(gaps)} of {len(CLASSES)} attack classes were found by none "
+            f"of the scanners that attempted them:</strong> {_esc(', '.join(gaps))}."
+        )
+    else:
+        lead = "Every class was found by at least one scanner that attempted it."
+    return (
+        '<section class="coverage"><h2>Where the gaps are</h2>'
+        f'<p class="gapline">{lead}</p>'
+        '<p class="note">Each bar is one scanner that attempted the class, filled if it '
+        "found the planted flaw in every run. A count of scanners, not a ranking: "
+        "segments are unlabelled and carry no order.</p>"
+        f'<ul class="covgrid">{"".join(cols)}</ul></section>'
     )
 
 
@@ -614,6 +697,7 @@ def render_index(doc: dict[str, Any], scanners: list[dict[str, Any]]) -> str:
             "Where runs disagreed, the range follows the mean as (min–max). "
         )
         content = (
+            f"{_coverage(scanners)}"
             "<h2>Detection by attack class</h2>"
             '<p class="note">Per-class recall is the primary result: the share of '
             "each class's planted flaws a scanner found. Classes are grouped by where "

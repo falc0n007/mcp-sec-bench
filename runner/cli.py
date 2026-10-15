@@ -29,7 +29,6 @@ from .adapters.cisco_mcp_scanner import CiscoMcpScannerAdapter
 from .adapters.mcp_guard import McpGuardAdapter
 from .adapters.ramparts import RampartsAdapter
 from .adapters.sentinel_scan import SentinelScanAdapter
-from .adapters.snyk_agent_scan import SnykAgentScanAdapter
 from .aggregate import aggregate
 from .corpus import load_corpus
 from .execute import DEFAULT_RUNS, ExecutionPlan, execute
@@ -48,8 +47,7 @@ FIXTURES = [OracleAdapter, OverflaggerAdapter, StaticOnlyAdapter,
 #: run is still listed and still publishes a row carrying its reason, because
 #: governance.md requires that rather than a quiet omission.
 REAL_ADAPTERS: list = [CiscoMcpScannerAdapter, McpGuardAdapter,
-                       RampartsAdapter, SentinelScanAdapter,
-                       SnykAgentScanAdapter]
+                       RampartsAdapter, SentinelScanAdapter]
 
 
 def _adapters(selection: str) -> list:

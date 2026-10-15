@@ -164,10 +164,11 @@ make scoreboard # run the benchmark and render the result
 `make scoreboard` writes to `results/local/`, which is gitignored, so a
 development run can never be mistaken for a published score.
 
-Five adapters are wired: four run credential-free, and one (Snyk agent-scan) is
-published as unavailable because a token gates all of its analysis. A scanner we cannot run
-still gets a row carrying the reason, because omitting it would quietly turn
-"we could not run this" into "this was not considered".
+Four adapters are wired, all credential-free. Snyk agent-scan is not on the
+board: a token gates all of its analysis and none was supplied, so there is no
+data to show. Its adapter and mapping stay in the tree, unregistered, and can be
+re-enabled by adding it back to `REAL_ADAPTERS` in `runner/cli.py` once someone
+supplies a `SNYK_TOKEN`.
 
 ## Adding your scanner
 
